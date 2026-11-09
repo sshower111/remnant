@@ -26,27 +26,16 @@ struct IngredientRow: View {
         return VStack(alignment: .leading, spacing: 8) {
             Group {
                 if let icon = IngredientIcon.asset(for: ingredient.name) {
-                    // A black-and-white icon (no ingredient photos exist), the amount under it.
-                    VStack(spacing: 8) {
-                        Image(icon)
-                            .renderingMode(.template)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: quantity.isEmpty ? 48 : 40, height: quantity.isEmpty ? 48 : 40)
-                        if !quantity.isEmpty {
-                            Text(quantity)
-                                .font(.subheadline.weight(.semibold))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                        }
-                    }
+                    // A black-and-white icon (no ingredient photos exist).
+                    Image(icon)
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 48, height: 48)
                 } else {
-                    // No icon fits ("aromatic"): the amount alone, as before.
-                    Text(quantity.isEmpty ? String(ingredient.name.prefix(1)).uppercased() : quantity)
-                        .font(.serifTitle(quantity.count > 6 ? 20 : 30))
-                        .minimumScaleFactor(0.6)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.center)
+                    // No icon fits ("aromatic"): its first letter.
+                    Text(String(ingredient.name.prefix(1)).uppercased())
+                        .font(.serifTitle(30))
                 }
             }
             .foregroundStyle(tint)
@@ -57,10 +46,11 @@ struct IngredientRow: View {
                     RoundedRectangle(cornerRadius: 16)
                         .strokeBorder(isActive ? Color.terracotta : Color.sand)
                 }
-            Text(ingredient.label)
+            // The amount leads the name: "3 tbsp Soy sauce".
+            (Text(quantity.isEmpty ? "" : quantity + " ").fontWeight(.semibold) + Text(ingredient.label))
                 .font(.subheadline)
                 .foregroundStyle(Color.ink)
-                .lineLimit(2)
+                .lineLimit(3)
                 .frame(width: 112, alignment: .leading)
         }
         .offset(y: isActive ? -3 : 0)

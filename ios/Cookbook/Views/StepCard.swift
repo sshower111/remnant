@@ -1,20 +1,12 @@
 import SwiftUI
 
 /// Cooking mode's step card: the steps side by side in a swipeable pager (big step number, the
-/// step, its ingredients, its timer), then "Done, next step". Used on the recipe page and,
-/// identical, as the card that pops up at the top while scrolling away from it. Both copies
-/// share the CookingSession, so they always show the same step.
+/// step, its ingredients, its timer), then "Done, next step", on the recipe page.
 struct StepCard: View {
     let session: CookingSession
     let ingredients: [Ingredient]
     let tried: Bool
     let onMarkTried: () -> Void
-    /// Swipes, Done and timer taps: the pop-up stays out while it's being used.
-    var onInteract: () -> Void = {}
-    /// The one-time "swipe" hint shows under the card on the page, not in the pop-up.
-    var showsHint = true
-    /// The pop-up's version: same look and controls, less padding and a smaller step number.
-    var compact = false
 
     /// The step card in view in the pager.
     @State private var page: Int?
@@ -25,8 +17,8 @@ struct StepCard: View {
         VStack(alignment: .leading, spacing: 0) {
             focusCard
             if !session.allDone {
-                controls.padding(.top, compact ? 10 : 16)
-                if showsHint && !hasSwiped && session.steps.count > 1 {
+                controls.padding(.top, 16)
+                if !hasSwiped && session.steps.count > 1 {
                     Label("Swipe the card to move between steps", systemImage: "hand.draw")
                         .font(.footnote)
                         .foregroundStyle(Color.muted)
@@ -63,9 +55,9 @@ struct StepCard: View {
             HStack(alignment: .top, spacing: 12) {
                 ForEach(session.steps.indices, id: \.self) { index in
                     stepContent(index)
-                        .frame(maxWidth: .infinity, minHeight: compact ? 0 : 208, maxHeight: .infinity,
+                        .frame(maxWidth: .infinity, minHeight: 208, maxHeight: .infinity,
                                alignment: .topLeading)
-                        .padding(compact ? 16 : 24)
+                        .padding(24)
                         .background(Color.white.opacity(0.7), in: .rect(cornerRadius: 24))
                         .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(Color.sand) }
                         .containerRelativeFrame(.horizontal)
@@ -85,7 +77,6 @@ struct StepCard: View {
         .onChange(of: page) { _, new in
             guard let new, new != session.active else { return }
             hasSwiped = true
-            onInteract()
             session.select(new)
         }
         // Moved some other way (Done, the progress bar, the list, the Live Activity): follow it.
@@ -98,10 +89,10 @@ struct StepCard: View {
     private func stepContent(_ index: Int) -> some View {
         let step = session.steps[index]
         let isDone = session.progress.done.contains(index)
-        return VStack(alignment: .leading, spacing: compact ? 12 : 20) {
+        return VStack(alignment: .leading, spacing: 20) {
             HStack(alignment: .firstTextBaseline) {
                 Text(String(format: "%02d", index + 1))
-                    .font(.serifTitle(compact ? 40 : 56))
+                    .font(.serifTitle(56))
                     .foregroundStyle(Color.terracotta)
                 Spacer()
                 Text("Step \(index + 1) of \(session.steps.count)")
@@ -142,7 +133,6 @@ struct StepCard: View {
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 let remaining = timer.endsAt.timeIntervalSince(context.date)
                 Button {
-                    onInteract()
                     session.cancelTimer()
                 } label: {
                     HStack(spacing: 8) {
@@ -154,7 +144,7 @@ struct StepCard: View {
                     .font(.subheadline)
                     .foregroundStyle(remaining <= 0 ? Color.terracotta : Color.ink)
                     .padding(.horizontal, 16)
-                    .frame(minHeight: compact ? 36 : 44)
+                    .frame(minHeight: 44)
                     .overlay { Capsule().strokeBorder(remaining <= 0 ? Color.terracotta : Color.sand) }
                 }
                 .buttonStyle(.plain)
@@ -163,14 +153,13 @@ struct StepCard: View {
             }
         } else if let seconds = session.activeDuration {
             Button {
-                onInteract()
                 session.startTimer()
             } label: {
                 Label("Start \(StepTimer.label(seconds)) timer", systemImage: "timer")
                     .font(.subheadline)
                     .foregroundStyle(Color.ink)
                     .padding(.horizontal, 16)
-                    .frame(minHeight: compact ? 36 : 44)
+                    .frame(minHeight: 44)
                     .overlay { Capsule().strokeBorder(Color.sand) }
             }
             .buttonStyle(.plain)
@@ -208,13 +197,12 @@ struct StepCard: View {
     private var controls: some View {
         HStack(spacing: 12) {
             Button {
-                onInteract()
                 withAnimation { session.completeStep() }
             } label: {
                 Label(session.active == session.steps.count - 1 ? "Finish" : "Done, next step", systemImage: "checkmark")
                     .font(.body.weight(.medium))
                     .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity, minHeight: compact ? 42 : 48)
+                    .frame(maxWidth: .infinity, minHeight: 48)
                     .background(Color.terracotta, in: .capsule)
             }
             .buttonStyle(.plain)

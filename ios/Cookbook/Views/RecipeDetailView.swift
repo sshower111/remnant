@@ -11,13 +11,8 @@ struct RecipeDetailView: View {
     @State private var showFullCaption = false
     /// Cooking progress; the Live Activity's ‹ › buttons can move it while the app is away.
     @State private var session: CookingSession?
-    /// Where cooking mode's step card is: the pop-up only comes out once it's been scrolled
-    /// past going down (reading the step list), not while above it (photo, ingredients).
-    @State private var cardPosition = CookingModeView.CardPosition.onScreen
-    /// The pop-up copy of the step card: out only while scrolling away from the real one.
-    @State private var showStepBar = false
-    @State private var hideStepBar: Task<Void, Never>?
-    @State private var lastScrollY: CGFloat?
+    /// The full ingredient list (tap "N ingredients"), for shopping.
+    @State private var showIngredientList = false
     /// "Check again" sent and not yet confirmed by the PC (no recipe yet posts).
     @State private var checkRequested = false
     @State private var checkError: String?
@@ -97,27 +92,6 @@ struct RecipeDetailView: View {
         }
     }
 
-    /// Scrolling below the step card (it's above the screen): pop up its copy until a moment
-    /// after the scrolling stops.
-    private func scrolled() {
-        guard cardPosition == .above, session?.steps.isEmpty == false else { return }
-        setStepBar(true)
-    }
-
-    /// Shows the pop-up card (and restarts its countdown to tuck away) or hides it now.
-    private func setStepBar(_ show: Bool) {
-        hideStepBar?.cancel()
-        if show != showStepBar {
-            withAnimation(.snappy(duration: 0.25)) { showStepBar = show }
-        }
-        guard show else { return }
-        hideStepBar = Task {
-            try? await Task.sleep(for: .seconds(2))  // a full card takes a moment to read
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeOut(duration: 0.3)) { showStepBar = false }
-        }
-    }
-
     private func load() async {
         do {
             try await store.loadRecipe(recipeId)
@@ -160,29 +134,6 @@ struct RecipeDetailView: View {
                     }
                 }
                 .padding(.bottom, 64)
-                // Any scroll movement (iOS 17 has no scroll-phase signal) pops the line up.
-                .onGeometryChange(for: CGFloat.self) { $0.frame(in: .scrollView).minY } action: { y in
-                    // Only real movement: not the first layout when the screen opens.
-                    if let last = lastScrollY, abs(y - last) > 2 { scrolled() }
-                    lastScrollY = y
-                }
-            }
-            .overlay(alignment: .top) {
-                // The same step card as on the page (same size, look and controls), on an opaque
-                // cream backing so it reads over the content. 6 + 10 pt of padding keeps the card
-                // itself exactly as wide as the page's (16 pt margins).
-                if showStepBar, let session, !session.steps.isEmpty, !session.allDone {
-                    StepCard(session: session, ingredients: recipe.ingredients, tried: recipe.tried,
-                             onMarkTried: { Task { await store.toggle(.tried, for: recipeId) } },
-                             onInteract: { setStepBar(true) }, showsHint: false, compact: true)
-                        .padding(10)
-                        .background(Color.cream, in: .rect(cornerRadius: 32))
-                        .overlay { RoundedRectangle(cornerRadius: 32).strokeBorder(Color.sand) }
-                        .shadow(color: Color.ink.opacity(0.16), radius: 18, y: 6)
-                        .padding(.horizontal, 6)
-                        .padding(.top, 4)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
             }
             // Opened from the Live Activity: jump to the step card, which shows its step.
             .onChange(of: store.stepToReveal, initial: true) { _, id in
@@ -238,16 +189,24 @@ struct RecipeDetailView: View {
             }
 
             FlowLayout(spacing: 8) {
-                ForEach(pills(recipe), id: \.self) { pill in
-                    Text(pill)
-                        .font(.subheadline)
-                        .foregroundStyle(Color.ink)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 5)
-                        .overlay { Capsule().strokeBorder(Color.sand) }
+                if recipe.ingredients.isEmpty {
+                    pill("No recipe yet")
+                } else {
+                    if let yieldLabel = recipe.yieldLabel { pill(yieldLabel) }
+                    // Opens the whole list at once, for shopping.
+                    Button { showIngredientList = true } label: {
+                        pill("\(recipe.ingredients.count) ingredients", systemImage: "list.bullet")
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Shows the full ingredient list")
+                    if !recipe.steps.isEmpty { pill("\(recipe.steps.count) steps") }
                 }
             }
             .padding(.top, 20)
+            .sheet(isPresented: $showIngredientList) {
+                IngredientListSheet(title: recipe.title, yieldLabel: recipe.yieldLabel,
+                                    ingredients: recipe.ingredients)
+            }
 
             FlowLayout(spacing: 8) {
                 if !recipe.ingredients.isEmpty { triedButton(recipe) }  // nothing to cook yet
@@ -257,11 +216,19 @@ struct RecipeDetailView: View {
         }
     }
 
-    private func pills(_ recipe: Recipe) -> [String] {
-        if recipe.ingredients.isEmpty { return ["No recipe yet"] }
-        return [recipe.yieldLabel,
-                "\(recipe.ingredients.count) ingredients",
-                recipe.steps.isEmpty ? nil : "\(recipe.steps.count) steps"].compactMap { $0 }
+    private func pill(_ text: String, systemImage: String? = nil) -> some View {
+        HStack(spacing: 5) {
+            if let systemImage {
+                Image(systemName: systemImage).font(.caption.weight(.semibold))
+            }
+            Text(text)
+        }
+        .font(.subheadline)
+        .foregroundStyle(Color.ink)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 5)
+        .overlay { Capsule().strokeBorder(Color.sand) }
+        .contentShape(.capsule)
     }
 
     /// A post kept without a recipe (🔖 Saved): Check again re-reads it on the PC, for when the
@@ -388,16 +355,10 @@ struct RecipeDetailView: View {
 
     private func ingredients(_ recipe: Recipe) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Ingredients")
-                    .font(.serifTitle(30))
-                    .foregroundStyle(Color.ink)
-                Spacer()
-                Text("\(recipe.ingredients.count) items")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.muted)
-            }
-            .padding(.horizontal, 16)
+            Text("Ingredients")
+                .font(.serifTitle(30))
+                .foregroundStyle(Color.ink)
+                .padding(.horizontal, 16)
 
             IngredientRow(ingredients: recipe.ingredients, active: session?.activeIngredients ?? [])
 
@@ -429,11 +390,7 @@ struct RecipeDetailView: View {
                     .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(Color.sand) }
             } else if let session {
                 CookingModeView(session: session, ingredients: recipe.ingredients, tried: recipe.tried,
-                                onMarkTried: { Task { await store.toggle(.tried, for: recipeId) } },
-                                onCardPosition: { position in
-                                    cardPosition = position
-                                    if position != .above { setStepBar(false) }
-                                })
+                                onMarkTried: { Task { await store.toggle(.tried, for: recipeId) } })
             }
         }
     }

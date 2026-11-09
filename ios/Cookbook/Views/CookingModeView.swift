@@ -7,11 +7,6 @@ struct CookingModeView: View {
     let ingredients: [Ingredient]
     let tried: Bool
     let onMarkTried: () -> Void
-    /// Where the step card is relative to the screen (the recipe screen pops a copy up once
-    /// it has been scrolled past going down).
-    var onCardPosition: (CardPosition) -> Void = { _ in }
-
-    nonisolated enum CardPosition: Equatable, Sendable { case onScreen, above, below }
 
     /// The focus card's scroll id, for jumping here from the Live Activity.
     static let focusID = "focus"
@@ -22,16 +17,6 @@ struct CookingModeView: View {
             StepCard(session: session, ingredients: ingredients, tried: tried, onMarkTried: onMarkTried)
                 .id(Self.focusID)
                 .padding(.top, 20)
-                // The scroll view's visible area in the card's own coordinates: below the card's
-                // bottom means it was scrolled past going down ("above" the screen).
-                .onGeometryChange(for: CardPosition.self) { proxy in
-                    guard let visible = proxy.bounds(of: .scrollView) else { return .onScreen }
-                    if visible.minY > proxy.size.height { return .above }
-                    if visible.maxY < 0 { return .below }
-                    return .onScreen
-                } action: { position in
-                    onCardPosition(position)
-                }
             overview.padding(.top, 32)
             if !session.progress.done.isEmpty {
                 Button("Start over") { withAnimation(.easeOut(duration: 0.25)) { session.startOver() } }
@@ -69,11 +54,15 @@ struct CookingModeView: View {
         .animation(.easeOut(duration: 0.35), value: session.progress)
     }
 
+    /// Every step in full; the current one sits on a terracotta-tinted block (number and text),
+    /// done ones fade back.
     private var overview: some View {
         VStack(spacing: 0) {
             ForEach(session.steps.indices, id: \.self) { index in
                 let isDone = session.progress.done.contains(index)
                 let isActive = index == session.active && !session.allDone
+                // No divider touching the highlighted block.
+                let showsDivider = !isActive && !(index == session.active + 1 && !session.allDone)
                 HStack(alignment: .top, spacing: 16) {
                     Button {
                         withAnimation { session.select(index) }
@@ -84,7 +73,7 @@ struct CookingModeView: View {
                                 .foregroundStyle(isActive ? Color.terracotta : Color.ink.opacity(0.7))
                                 .frame(width: 36, alignment: .leading)
                             Text(session.steps[index].text)
-                                .font(.system(size: 15))
+                                .font(.system(size: 15, weight: isActive ? .medium : .regular))
                                 .foregroundStyle(Color.ink)
                                 .lineSpacing(3)
                                 .multilineTextAlignment(.leading)
@@ -110,9 +99,22 @@ struct CookingModeView: View {
                     .accessibilityLabel(isDone ? "Mark step \(index + 1) not done" : "Mark step \(index + 1) done")
                 }
                 .padding(.vertical, 16)
+                .padding(.horizontal, 10)
+                .background {
+                    if isActive {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.terracottaSoft)
+                            .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(Color.terracotta.opacity(0.5)) }
+                    }
+                }
                 .opacity(isDone && !isActive ? 0.4 : 1)
-                .overlay(alignment: .top) { Rectangle().fill(Color.sand).frame(height: 1) }
+                .overlay(alignment: .top) {
+                    Rectangle().fill(showsDivider ? Color.sand : Color.clear).frame(height: 1)
+                        .padding(.horizontal, 10)
+                }
             }
         }
+        .padding(.horizontal, -10)  // text lines up with the page; the block reaches past it
+        .animation(.easeOut(duration: 0.25), value: session.active)
     }
 }

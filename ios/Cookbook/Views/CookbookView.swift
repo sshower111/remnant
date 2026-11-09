@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// The home feed, with the pantry built into its search: typing filters by
-/// title and suggests ingredients; picked ingredients re-rank the feed with GET /api/pantry
-/// (the same ranking as `main.py pantry`: most picked ingredients used, then fewest others
-/// needed). The filter chips apply either way.
+/// The home feed, with the pantry built into its search (at the bottom, in thumb reach):
+/// typing finds recipes by title or by what's in them ("beef" finds beef slice and ground
+/// beef too) and suggests ingredients; picked ingredients re-rank the feed (most picked
+/// ingredients used, then fewest others needed). Both run on the phone's copy of the recipes
+/// (IngredientSearch). The filter chips apply either way.
 struct CookbookView: View {
     @Environment(RecipeStore.self) private var store
     @State private var path: [Int] = []
@@ -15,9 +16,6 @@ struct CookbookView: View {
     /// Picked ingredients ("what you have"), one per line; a per-phone convenience.
     @AppStorage("pantry:selected") private var savedPicks = ""
     @State private var ingredients: [PantryIngredient] = []
-    /// Pantry results for the picks, by recipe id, in rank order.
-    @State private var matches: [PantryMatch]?
-    @State private var pantryError: String?
     /// The recipe just removed with a swipe (shows the Undo bar).
     @State private var removed: RecipeSummary?
     @State private var removeError: String?
@@ -54,10 +52,11 @@ struct CookbookView: View {
         savedPicks.split(separator: "\n").map(String.init)
     }
 
-    /// The feed: every recipe (title search), or with picks, the pantry ranking; 🔖 shows the
-    /// posts saved for later instead (no ingredients, so picks don't apply).
+    /// The feed: every recipe, or with picks, the pantry ranking; 🔖 shows the posts saved for
+    /// later instead (no ingredients, so picks don't apply). Typed text keeps the recipes whose
+    /// title or ingredients have every word, real ingredients before flavourings ("chicken
+    /// thigh" before "chicken powder").
     private var shown: [(recipe: RecipeSummary, match: PantryMatch?)] {
-        let words = query.lowercased().split(whereSeparator: \.isWhitespace)
         let recipes = store.recipes ?? []
         let ranked: [(RecipeSummary, PantryMatch?)]
         if filter == .saved {
@@ -65,12 +64,21 @@ struct CookbookView: View {
         } else if picks.isEmpty {
             ranked = recipes.map { ($0, nil) }
         } else {
-            let byId = Dictionary(uniqueKeysWithValues: recipes.map { ($0.id, $0) })
-            ranked = (matches ?? []).compactMap { match in byId[match.recipeId].map { ($0, match) } }
+            ranked = IngredientSearch.rank(recipes.map { ($0, recipeIngredients($0)) }, picks: picks,
+                                           staples: Self.staples)
+                .map { ($0.0, Optional($0.1)) }
         }
-        return ranked.filter { recipe, _ in
-            filter.matches(recipe) && words.allSatisfy { recipe.title.lowercased().contains($0) }
+        let kept = ranked.filter { filter.matches($0.0) }
+        guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return kept }
+        let scored = kept.map { item in
+            (item, IngredientSearch.strength(of: query, title: item.0.title, ingredients: recipeIngredients(item.0)))
         }
+        return scored.filter { $0.1 == .strong }.map(\.0) + scored.filter { $0.1 == .weak }.map(\.0)
+    }
+
+    /// A recipe's ingredients from the phone's copy (every recipe is fetched for offline use).
+    private func recipeIngredients(_ recipe: RecipeSummary) -> [Ingredient] {
+        store.details[recipe.id]?.ingredients ?? []
     }
 
     /// Ingredient chips under the search box: matches for what's typed, or the most used
@@ -91,42 +99,32 @@ struct CookbookView: View {
             List {
                 VStack(alignment: .leading, spacing: 0) {
                     header
-                    searchField.padding(.top, 32)
-                    ingredientChips
                     if !picks.isEmpty {
-                        pickedChips.padding(.top, 14)
+                        pickedChips.padding(.top, 24)
                     }
-                    filterChips.padding(.top, 14)
+                    filterChips.padding(.top, picks.isEmpty ? 24 : 14)
                 }
                 // Inside one row, buttons must not take over the whole row's tap.
                 .buttonStyle(.borderless)
                 .feedRow(top: 24, bottom: 8)
                 sharedPosts
                 content
-                Color.clear.frame(height: 48).feedRow()
+                Color.clear.frame(height: 8).feedRow()
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .environment(\.defaultMinListRowHeight, 0)
             .scrollDismissesKeyboard(.immediately)
             .background(Color.cream)
-            .refreshable {
-                await store.load()
-                await searchPantry()
-            }
+            .refreshable { await store.load() }
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: Int.self) { RecipeDetailView(recipeId: $0) }
-            .overlay(alignment: .bottom) { removedBar }
+            // The search box sits at the bottom, in thumb reach; the keyboard lifts it.
+            .safeAreaInset(edge: .bottom, spacing: 0) { bottomBar }
         }
         .task { if store.recipes == nil { await store.load() } }
         .task { await loadIngredients() }
         .task { await store.watchIngestJobs() }
-        // Re-rank whenever the picks change (a short pause first, for quick taps).
-        .task(id: savedPicks) {
-            try? await Task.sleep(for: .milliseconds(200))
-            guard !Task.isCancelled else { return }
-            await searchPantry()
-        }
         .sheet(isPresented: $showSettings) { SettingsView() }
         // remnant://recipe/<id>, from tapping the Live Activity: show that recipe at its step.
         .onOpenURL { url in
@@ -171,8 +169,27 @@ struct CookbookView: View {
         if filter == .saved {
             return store.saved.count == 1 ? "1 post waiting for its recipe" : "\(store.saved.count) posts waiting for their recipe"
         }
-        if !picks.isEmpty, let matches { return "\(matches.count) recipes use what you have" }
+        if !picks.isEmpty { return "\(shown.count) recipes use what you have" }
         return "\(recipes.count) recipes saved from your reels"
+    }
+
+    /// Undo bar, ingredient suggestions and the search box, pinned to the bottom of the feed.
+    private var bottomBar: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            removedBar
+            ingredientChips
+            searchField
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .background(alignment: .top) {
+            // Cards fade out under the bar instead of meeting a hard edge.
+            LinearGradient(colors: [Color.cream.opacity(0), Color.cream], startPoint: .top, endPoint: .bottom)
+                .frame(height: 24)
+                .offset(y: -24)
+        }
+        .background(Color.cream.ignoresSafeArea(edges: .bottom))
     }
 
     private var searchField: some View {
@@ -220,7 +237,7 @@ struct CookbookView: View {
             }
             .scrollIndicators(.hidden)
             .scrollClipDisabled()
-            .padding(.top, 12)
+            .padding(.bottom, 10)
         }
     }
 
@@ -399,15 +416,10 @@ struct CookbookView: View {
                 Task { await store.load() }
             }
             .feedRow(top: 16)
-        } else if store.recipes == nil || (filter != .saved && !picks.isEmpty && matches == nil && pantryError == nil) {
+        } else if store.recipes == nil {
             ForEach(0..<4, id: \.self) { _ in
                 RoundedRectangle(cornerRadius: 24).fill(Color.sandSoft).frame(height: 122).feedRow()
             }
-        } else if filter != .saved, !picks.isEmpty, let pantryError, matches == nil {
-            errorBox(store.offlineSince != nil
-                     ? "Searching by ingredient needs the PC, which is out of reach right now."
-                     : "Couldn't search by ingredient (\(pantryError)).") { Task { await searchPantry() } }
-                .feedRow(top: 16)
         } else if shown.isEmpty {
             Text(emptyMessage)
                 .foregroundStyle(Color.muted)
@@ -472,8 +484,7 @@ struct CookbookView: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 10)
             .background(Color.ink, in: .rect(cornerRadius: 20))
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
+            .padding(.bottom, 10)
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .task(id: recipe.id) {
                 try? await Task.sleep(for: .seconds(5))
@@ -486,8 +497,7 @@ struct CookbookView: View {
                 .padding(.horizontal, 18)
                 .padding(.vertical, 14)
                 .background(Color.ink, in: .capsule)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 8)
+                .padding(.bottom, 10)
                 .task {
                     try? await Task.sleep(for: .seconds(4))
                     self.removeError = nil
@@ -533,21 +543,6 @@ struct CookbookView: View {
     private func loadIngredients() async {
         guard ingredients.isEmpty else { return }
         ingredients = (try? await APIClient.current().ingredients()) ?? []
-    }
-
-    private func searchPantry() async {
-        let have = picks
-        guard !have.isEmpty else {
-            matches = nil
-            pantryError = nil
-            return
-        }
-        do {
-            matches = try await APIClient.current().pantry(have: have)
-            pantryError = nil
-        } catch {
-            pantryError = error.localizedDescription
-        }
     }
 }
 

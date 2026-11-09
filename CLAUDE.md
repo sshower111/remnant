@@ -212,15 +212,20 @@ uvicorn api.app:app --host 0.0.0.0 --port 8000   # API for the iPhone app (on th
   an iPhone app with a Python backend. It's in git history (`4937190`) if ever needed.
 - **Native iOS app** (`ios/`; built and run on the iPhone, never a Simulator: see Environment;
   the one exception is the README's demo media, captured in the Simulator with the user's OK).
-  - Feed: the search box also takes "what you have" (ingredient chips -> `/api/pantry`
-    re-ranks the feed; no separate Pantry tab, the user's choice). Filters All / ❤️ /
+  - Feed: the search box is pinned to the bottom (thumb reach; user's choice 2026-11-09).
+    Typing finds recipes by title or ingredient (`Models/IngredientSearch.swift`, on the
+    phone's copy of every recipe: "beef" finds beef slice and ground beef; "chicken" also
+    finds drumstick/wing/thigh; flavourings like chicken powder or stock still match but
+    rank after the real thing). It also takes "what you have" (ingredient chips re-rank the
+    feed with the same matching, on the phone; the app no longer calls `/api/pantry`; no
+    separate Pantry tab, the user's choice). Filters All / ❤️ /
     👌🎉 (the API's `tried`, shown as "Cooked" everywhere) / 🔖 (`?status=todo`). Filter
     switches don't animate: animating the feed or a sliding pill stuttered on the phone.
   - Thumbnails (`Views/Thumbnail.swift`) are decoded at their drawn size off the main thread
     and cached in memory; photos come from URLCache once downloaded (offline too).
   - Offline (`Store/OfflineStore.swift`): the feed, 🔖 list and every recipe are saved as JSON
     and shown first; the PC being out of reach keeps them with an "Offline" tag. API calls
-    time out after 8 s. Marks, ingredient search and Check again need the PC.
+    time out after 8 s. Marks and Check again need the PC; search works offline.
   - Cooking progress (step in focus, done steps, the step timer) lives on the phone
     (`Shared/CookingProgress.swift`, UserDefaults), shared with the Live Activity.
   - Recipe screen: ▶ opens the post only in its app (`UIApplication.open` with
@@ -229,12 +234,14 @@ uvicorn api.app:app --host 0.0.0.0 --port 8000   # API for the iPhone app (on th
     (`Models/IngredientIcon.swift`, keyword rules on the canonical name, specific first):
     proteins as their animal (cow, pig, chicken, duck, fish), one mixed-vegetables icon for
     every vegetable, one fruits icon; sources/licenses in `ios/Art/icons` (Health Icons CC0,
-    Tabler MIT, Lucide ISC; Tabler/Lucide strokes thinned to 1.25 to match).
+    Tabler MIT, Lucide ISC; Tabler/Lucide strokes thinned to 1.25 to match). The tile box
+    holds only the icon; the amount leads the name under it ("3 tbsp Soy sauce"). The
+    "N ingredients" pill opens the whole list in a sheet (`Views/IngredientListSheet.swift`,
+    tap to tick off while shopping).
   - Cooking mode: the step card (`Views/StepCard.swift`) is a paging horizontal scroll view
-    (swipe between steps; a hand-made drag stuttered). The same StepCard, `compact`, pops up
-    at the top while scrolling once the card is above the screen (scrolled down past it), and
-    tucks away ~2 s after scrolling stops; never while above the card. The step list shows
-    every step in full.
+    (swipe between steps; a hand-made drag stuttered). No floating copy of the card while
+    scrolling (removed 2026-11-09 at the user's request). The step list shows every step in
+    full; the current step's whole row sits on a terracotta-tinted block.
   - Live Activity (`CookingActivity/`): follows Apple's Live Activities HIG in the app's look
     (SF Pro, cream/terracotta; Lock Screen cream or warm dark by appearance, 14 pt margins;
     the cook as logo mark; one ‹ | › control plus ✕; compact/minimal fit the 28 pt circle,
