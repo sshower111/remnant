@@ -97,6 +97,9 @@ struct CookbookView: View {
         NavigationStack(path: $path) {
             // A List (not a ScrollView) for its swipe actions; rows are styled to look the same.
             List {
+                if store.isRefreshing {
+                    RefreshingChefView().feedRow(top: 4, bottom: 4)
+                }
                 VStack(alignment: .leading, spacing: 0) {
                     header
                     if !picks.isEmpty {
@@ -116,7 +119,7 @@ struct CookbookView: View {
             .environment(\.defaultMinListRowHeight, 0)
             .scrollDismissesKeyboard(.immediately)
             .background(Color.cream)
-            .refreshable { await store.load() }
+            .refreshable { await store.refresh() }
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: Int.self) { RecipeDetailView(recipeId: $0) }
             // The search box sits at the bottom, in thumb reach; the keyboard lifts it.
@@ -360,15 +363,18 @@ struct CookbookView: View {
                   "No ingredient list in that post. If the recipe is coming, save it for later.")
         }
         return HStack(alignment: .top, spacing: 12) {
+            // The chef cooks while the PC downloads and parses the video; the error pose if it failed.
             Group {
                 if job.isActive {
-                    ProgressView().tint(Color.terracotta)
+                    AnimatedChefView(.loading, size: 44)
+                } else if job.status == "failed" {
+                    AnimatedChefView(.error, size: 44)
                 } else {
-                    Image(systemName: job.status == "failed" ? "exclamationmark.triangle" : "checkmark.circle")
+                    Image(systemName: "checkmark.circle")
                         .foregroundStyle(Color.terracotta)
                 }
             }
-            .frame(width: 22, height: 22)
+            .frame(width: 44, height: 44)
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.subheadline.weight(.medium))
@@ -420,6 +426,10 @@ struct CookbookView: View {
             ForEach(0..<4, id: \.self) { _ in
                 RoundedRectangle(cornerRadius: 24).fill(Color.sandSoft).frame(height: 122).feedRow()
             }
+        } else if shown.isEmpty, filter == .favorites, query.isEmpty, picks.isEmpty {
+            EmptyFavoritesView()
+                .padding(.top, 24)
+                .feedRow()
         } else if shown.isEmpty {
             Text(emptyMessage)
                 .foregroundStyle(Color.muted)
