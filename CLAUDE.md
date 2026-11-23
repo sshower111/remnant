@@ -255,7 +255,8 @@ uvicorn api.app:app --host 0.0.0.0 --port 8000   # API for the iPhone app (on th
     the step timer and Next step at the bottom; the screen stays awake. It replaced the
     horizontal step pager (`StepCard`), which rendered blank on iOS 27.
   - Live Activity (`CookingActivity/`): follows Apple's Live Activities HIG in the app's look
-    (SF Pro, cream/terracotta; Lock Screen cream or warm dark by appearance, 14 pt margins;
+    (SF Pro, the app's design tokens since 2026-11-23: warm white and ember on the island, the
+    app's light/dark canvas on the Lock Screen, an ember capsule ‹ › pill; 14 pt margins;
     the cook as logo mark; one ‹ | › control plus ✕; compact/minimal fit the 28 pt circle,
     a progress ring or the timer). The expanded island picks 3 or 2 lines with ViewThatFits:
     iOS gives it less height on a long press than when an alert opens it, and a greedy

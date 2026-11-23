@@ -4,8 +4,11 @@
 > from the launch video, `docs/media/remnant-launch*.mp4`, made with the brag skill), and
 > `library.jpg`, `recipe-steps.jpg`, `cook-mode.jpg` and `shopping-list.jpg` from
 > `design/after/`. The shots below (`home`, `feed`, `pantry`, `recipe`, `cooking`, `demo.gif`)
-> show the old UI and icon and are no longer linked; `island.jpg` and `lockscreen.jpg` still
-> are. Redo `home.jpg` on the phone to show the new icon.
+> show the old UI and icon and are no longer linked. `island.jpg` and `lockscreen.jpg` were
+> recaptured the same day in the Simulator (dark appearance, recipe 114 at step 6 with its
+> timer running) after the Live Activity moved to the app's tokens. Leave the app with the
+> home gesture (a swipe up from the bottom edge): the simulator tool's Home and Lock buttons
+> did nothing; its Side button locks the device.
 
 Run on the Mac, in the iOS Simulator: the one place the project uses a Simulator, with the
 user's OK (2026-11-05). The PC keeps serving the real database (`uvicorn` on

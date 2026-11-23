@@ -4,7 +4,8 @@
 //
 //  The cooking-step Live Activity, designed to Apple's Live Activities guidelines
 //  (developer.apple.com/design/human-interface-guidelines/live-activities) in the app's own
-//  look: cream text, terracotta accents, Apple's SF Pro throughout, and the pixel chef
+//  look (the 2026-11-23 design system): warm white on the dark island, the ember accent, the
+//  app's light/dark canvas on the Lock Screen, SF Pro throughout, and the pixel chef
 //  (Shared/ChefMascot.swift) as the logo mark, without a container, in the leading spot.
 //  Live Activities can't run a frame timer, so the chef is a still: one toss pose per step.
 //
@@ -13,7 +14,7 @@
 //  - Minimal: the chef at the wok (chef_wok_minimal), or the timer when one runs.
 //  - Expanded and Lock Screen share one layout: chef + "Step 2/4" with a segment bar, the
 //    instruction, then the ingredients and a single ‹ | › control (plus a quiet ✕).
-//  - Lock Screen follows the phone's appearance (cream / warm dark, like the app), with the
+//  - Lock Screen follows the phone's appearance (the app's light / dark canvas), with the
 //    standard 14 pt margins; the island is always black (the system's, not customizable).
 //  Keep both under ~160 pt tall or iOS crops them. ‹ › run ChangeStepIntent, ✕ runs
 //  EndCookingIntent (ios/Shared/CookingProgress.swift); tapping elsewhere opens the recipe
@@ -32,14 +33,24 @@ private extension Color {
     }
 }
 
-/// The app's palette (ios/Cookbook/Design/Theme.swift), for the widget.
+/// The app's design tokens (ios/Shared/Remnant.xcassets, design/DIRECTION.md), light / dark.
 private enum Palette {
-    static let cream = Color(hex: 0xFAF8F5)
-    static let ink = Color(hex: 0x2B2622)
-    static let muted = Color(hex: 0x8A817A)
-    static let sand = Color(hex: 0xE6E2DD)
-    static let terracotta = Color(hex: 0xC86D51)
-    static let warmDark = Color(hex: 0x1F1A17)         // Lock Screen background in Dark Mode
+    // Dark (the hero; the island is always dark)
+    static let canvasDark = Color(hex: 0x12100E)
+    static let surfaceDark = Color(hex: 0x1D1A17)
+    static let raisedDark = Color(hex: 0x2A2521)
+    static let textDark = Color(hex: 0xF4EFE9)
+    static let secondaryDark = Color(hex: 0xA69D94)
+    static let emberDark = Color(hex: 0xE8875F)
+    static let onEmberDark = Color(hex: 0x1A0F0A)
+    // Light
+    static let canvasLight = Color(hex: 0xFAF7F2)
+    static let surfaceLight = Color(hex: 0xF1ECE5)
+    static let hairlineLight = Color(hex: 0xE3DCD3)
+    static let textLight = Color(hex: 0x1F1A16)
+    static let secondaryLight = Color(hex: 0x6B625A)
+    static let emberLight = Color(hex: 0xA84B2A)
+    static let onEmberLight = Color(hex: 0xFFFFFF)
 }
 
 /// Colors for one surface: the black island, or the Lock Screen in light or dark.
@@ -47,18 +58,19 @@ private struct Look {
     var text: Color
     var secondary: Color
     var accent: Color
+    var onAccent: Color       // the ‹ › glyphs on the ember pill (the app's primary pill)
     var track: Color          // empty part of the progress ring / bar
     var quiet: Color          // the ✕ button's fill
 
-    static let island = Look(text: Palette.cream, secondary: Palette.cream.opacity(0.6),
-                             accent: Palette.terracotta,
-                             track: Palette.cream.opacity(0.2), quiet: Palette.cream.opacity(0.14))
-    static let lockLight = Look(text: Palette.ink, secondary: Palette.muted,
-                                accent: Palette.terracotta,
-                                track: Palette.sand, quiet: Palette.sand)
-    static let lockDark = Look(text: Palette.cream, secondary: Palette.cream.opacity(0.6),
-                               accent: Palette.terracotta,
-                               track: Palette.cream.opacity(0.18), quiet: Palette.cream.opacity(0.14))
+    static let island = Look(text: Palette.textDark, secondary: Palette.secondaryDark,
+                             accent: Palette.emberDark, onAccent: Palette.onEmberDark,
+                             track: Palette.textDark.opacity(0.18), quiet: Palette.textDark.opacity(0.14))
+    static let lockLight = Look(text: Palette.textLight, secondary: Palette.secondaryLight,
+                                accent: Palette.emberLight, onAccent: Palette.onEmberLight,
+                                track: Palette.hairlineLight, quiet: Palette.surfaceLight)
+    static let lockDark = Look(text: Palette.textDark, secondary: Palette.secondaryDark,
+                               accent: Palette.emberDark, onAccent: Palette.onEmberDark,
+                               track: Palette.raisedDark, quiet: Palette.raisedDark)
 }
 
 struct CookingActivityLiveActivity: Widget {
@@ -118,7 +130,7 @@ struct CookingActivityLiveActivity: Widget {
                 }
             }
             .widgetURL(recipeURL(context))
-            .keylineTint(Palette.terracotta)
+            .keylineTint(Palette.emberDark)
         }
     }
 
@@ -128,7 +140,7 @@ struct CookingActivityLiveActivity: Widget {
 }
 
 /// The Lock Screen banner: the chef mid-toss beside the step, then the expanded layout's body,
-/// on the app's cream (or warm dark) background.
+/// on the app's canvas, light or dark.
 private struct LockScreenLiveActivityView: View {
     let context: ActivityViewContext<CookingActivityAttributes>
     @Environment(\.colorScheme) private var colorScheme
@@ -145,8 +157,8 @@ private struct LockScreenLiveActivityView: View {
             StepBody(context: context, look: look, textSize: 17)
         }
         .padding(14)  // the standard Lock Screen margin
-        .activityBackgroundTint(dark ? Palette.warmDark : Palette.cream)
-        .activitySystemActionForegroundColor(dark ? Palette.cream : Palette.ink)
+        .activityBackgroundTint(dark ? Palette.canvasDark : Palette.canvasLight)
+        .activitySystemActionForegroundColor(dark ? Palette.textDark : Palette.textLight)
     }
 }
 
@@ -214,8 +226,8 @@ private struct StepBody: View {
     }
 }
 
-/// Back and next as one element (the guidelines prefer a single control), with ✕ beside it.
-/// The pill's corners follow the card's (ContainerRelativeShape), concentric with its edge.
+/// Back and next as one element (the guidelines prefer a single control), with ✕ beside it:
+/// an ember capsule like the app's primary pill.
 private struct StepControl: View {
     let context: ActivityViewContext<CookingActivityAttributes>
     let look: Look
@@ -228,12 +240,12 @@ private struct StepControl: View {
             HStack(spacing: 0) {
                 half("chevron.left", "Previous step", ChangeStepIntent(recipeId: id, offset: -1),
                      enabled: state.currentStepIndex > 0)
-                Rectangle().fill(.white.opacity(0.35)).frame(width: 1, height: 16)
+                Rectangle().fill(look.onAccent.opacity(0.3)).frame(width: 1, height: 16)
                 half("chevron.right", "Next step", ChangeStepIntent(recipeId: id, offset: 1),
                      enabled: state.currentStepIndex < state.totalSteps - 1)
             }
-            .background(look.accent, in: ContainerRelativeShape())
-            .clipShape(ContainerRelativeShape())
+            .background(look.accent, in: Capsule())
+            .clipShape(Capsule())
 
             // Ends the island now (iOS keeps it after the app is closed otherwise).
             Button(intent: EndCookingIntent()) {
@@ -252,7 +264,7 @@ private struct StepControl: View {
         Button(intent: intent) {
             Image(systemName: symbol)
                 .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(.white.opacity(enabled ? 1 : 0.35))
+                .foregroundStyle(look.onAccent.opacity(enabled ? 1 : 0.35))
                 .frame(width: 46, height: height)
                 .contentShape(.rect)
         }
