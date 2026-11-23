@@ -21,6 +21,8 @@ struct RecipeDetailView: View {
     @State private var checkError: String?
     /// Watch found no app for the post (e.g. Instagram not installed): offer Safari instead.
     @State private var appMissing: AppMissing?
+    /// The photo has scrolled under the bar: the bar gets its background and the title.
+    @State private var pastHero = false
 
     private static let platformNames = ["instagram": "Instagram", "youtube": "YouTube", "tiktok": "TikTok"]
 
@@ -42,7 +44,19 @@ struct RecipeDetailView: View {
         }
         .background(Color.canvas)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.hidden, for: .navigationBar)
+        .navigationTitle(pastHero ? (store.details[recipeId]?.title ?? "") : "")
+        // A material strip under the bar once the photo is gone. Not .toolbarBackground: that swaps
+        // the shared bar appearance and the library's serif large title came back plain.
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(.bar)
+                .frame(height: 0)
+                .ignoresSafeArea(edges: .top)
+                .opacity(pastHero ? 1 : 0)
+                .animation(.easeOut(duration: 0.15), value: pastHero)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
         .toolbar {
             if let recipe = store.details[recipeId] {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -60,7 +74,7 @@ struct RecipeDetailView: View {
         }
         .alert(item: $appMissing) { missing in
             Alert(title: Text("\(missing.name) isn't installed"),
-                  message: Text("The video opens in the \(missing.name) app so you stay signed in. Install it, or open the post in Safari, which may ask you to sign in."),
+                  message: Text("The video opens in the \(missing.name) app so you stay signed in. Install it, or open the reel in Safari, which may ask you to sign in."),
                   primaryButton: .default(Text("Open in Safari")) { openURL(missing.url) },
                   secondaryButton: .cancel())
         }
@@ -142,6 +156,8 @@ struct RecipeDetailView: View {
             }
         }
         .ignoresSafeArea(edges: .top)
+        // The photo is 5:4 of the width; past its foot (less the bar), the bar takes over.
+        .trackingScroll(past: UIScreenWidth.value * 5 / 4 - 120, into: $pastHero)
     }
 
     /// The photo edge to edge, the title and creator on a scrim at its foot.
@@ -151,7 +167,7 @@ struct RecipeDetailView: View {
             .overlay {
                 Thumbnail(url: store.thumbnailURL(recipe.thumbnailUrl), title: recipe.title, initialSize: 96, maxPoints: 500)
             }
-            .overlay(alignment: .bottom) { PhotoScrim().frame(height: 260) }
+            .overlay(alignment: .bottom) { PhotoScrim().frame(height: 320) }
             .overlay(alignment: .bottomLeading) {
                 VStack(alignment: .leading, spacing: Spacing.xxs) {
                     Text(recipe.title)
@@ -299,7 +315,7 @@ struct RecipeDetailView: View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionHeader("Steps")
             if recipe.steps.isEmpty {
-                Text("The post doesn't describe the method. Watch the video to follow along.")
+                Text("This reel doesn't describe the method. Watch it to follow along.")
                     .font(.body)
                     .foregroundStyle(Color.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -363,8 +379,8 @@ struct RecipeDetailView: View {
         return VStack(alignment: .leading, spacing: Spacing.s) {
             SectionHeader("No recipe yet")
             Text(kept
-                 ? "Saved in Later. Once the creator adds the recipe to the caption or links it, check again and your PC reads the post again."
-                 : "This post has no ingredient list. If the recipe is coming, save it for later and check again then.")
+                 ? "Saved in Later. Once the creator adds the recipe to the caption or links it, check again."
+                 : "This reel has no ingredient list. If the recipe is coming, save it for later and check again then.")
                 .font(.body)
                 .foregroundStyle(Color.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -403,6 +419,30 @@ struct RecipeDetailView: View {
                 }
                 .buttonStyle(.secondaryPill)
             }
+        }
+    }
+}
+
+
+private enum UIScreenWidth {
+    @MainActor static var value: CGFloat {
+        (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.width ?? 390
+    }
+}
+
+private extension View {
+    /// Sets `flag` once the scroll view has scrolled further than `offset` (iOS 18+; on iOS 17 the
+    /// bar stays clear).
+    @ViewBuilder
+    func trackingScroll(past offset: CGFloat, into flag: Binding<Bool>) -> some View {
+        if #available(iOS 18.0, *) {
+            onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top > offset
+            } action: { _, past in
+                flag.wrappedValue = past
+            }
+        } else {
+            self
         }
     }
 }

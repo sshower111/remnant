@@ -14,6 +14,7 @@ struct CookModeView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var showIngredients = false
 
     var body: some View {
@@ -167,19 +168,25 @@ struct CookModeView: View {
 
     /// Ingredients and the step's timer on the left, Next step on the right, all in thumb reach.
     private var bottomBar: some View {
-        HStack(spacing: Spacing.xs) {
-            // Icon only when the timer needs the room.
-            let compact = !session.allDone && session.activeDuration != nil
-            Button { showIngredients = true } label: {
-                if compact {
-                    Image(systemName: "list.bullet")
-                } else {
-                    Label("Ingredients", systemImage: "list.bullet")
+        // One row; at the accessibility text sizes, Next step gets a row of its own.
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.xs))
+            : AnyLayout(HStackLayout(spacing: Spacing.xs))
+        return layout {
+            HStack(spacing: Spacing.xs) {
+                // Icon only when the timer needs the room.
+                let compact = !session.allDone && session.activeDuration != nil
+                Button { showIngredients = true } label: {
+                    if compact {
+                        Image(systemName: "list.bullet")
+                    } else {
+                        Label("Ingredients", systemImage: "list.bullet")
+                    }
                 }
+                .buttonStyle(.secondaryPill)
+                .accessibilityLabel("Ingredients")
+                if !session.allDone { timerButton }
             }
-            .buttonStyle(.secondaryPill)
-            .accessibilityLabel("Ingredients")
-            if !session.allDone { timerButton }
             if session.allDone {
                 Button("Close", systemImage: "xmark") { dismiss() }
                     .buttonStyle(.pill(.secondary, expands: true))

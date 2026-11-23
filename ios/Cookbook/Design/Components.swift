@@ -226,18 +226,17 @@ struct PhotoScrim: View {
     var body: some View {
         LinearGradient(stops: [
             .init(color: .black.opacity(0), location: 0),
-            .init(color: .black.opacity(0.45), location: 0.45),
-            .init(color: .black.opacity(0.78), location: 1),
+            .init(color: .black.opacity(0.5), location: 0.35),
+            .init(color: .black.opacity(0.8), location: 1),
         ], startPoint: .top, endPoint: .bottom)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
 }
 
-/// Ember for icons drawn on photos: always the bright (dark-mode) ember, which reads on the dark
-/// circle behind it in both appearances.
+/// The light-mode ember in both appearances, behind white on photos (5.7:1).
 extension Color {
-    static let emberOnPhoto = Color(hex: 0xE8875F)
+    static let emberDeep = Color(hex: 0xA84B2A)
 }
 
 #Preview {

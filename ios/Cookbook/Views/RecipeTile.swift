@@ -91,11 +91,13 @@ struct RecipeTile: View {
     private var heart: some View {
         Button(action: onToggleFavorite) {
             Image(systemName: recipe.favorite ? "heart.fill" : "heart")
-                .font(.system(.subheadline, weight: .semibold))
-                .foregroundStyle(recipe.favorite ? Color.emberOnPhoto : .white)
+                // A fixed size: it sits on a fixed 32 pt circle (the 44 pt target doesn't grow either).
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
                 .symbolEffect(.bounce, value: recipe.favorite)
                 .frame(width: 32, height: 32)
-                .background(.black.opacity(0.4), in: .circle)
+                // White on a deep ember (5.7:1) or on 50 % black (≥ 3.9:1 even over a white photo).
+                .background(recipe.favorite ? Color.emberDeep : Color.black.opacity(0.5), in: .circle)
                 .frame(width: minTouch, height: minTouch)
                 .contentShape(.rect)
         }

@@ -46,6 +46,7 @@ struct SettingsView: View {
                 } footer: {
                     Text("Your PC's address on home Wi-Fi. Start the server there with `uvicorn api.app:app --host 0.0.0.0 --port 8000`.")
                 }
+                .listRowBackground(Color.surface)
 
                 Section {
                     Toggle("Show steps when you leave a recipe", isOn: $autoStart)
@@ -55,6 +56,7 @@ struct SettingsView: View {
                 } footer: {
                     Text("Watch always shows the current step in the Dynamic Island. With this on, it also appears when you press Home or switch apps while a recipe is open.")
                 }
+                .listRowBackground(Color.surface)
             }
             .scrollContentBackground(.hidden)
             .background(Color.canvas)

@@ -227,7 +227,11 @@ struct CookbookView: View {
     private var pantryHint: String {
         guard !picks.isEmpty else { return "Tap what you have. Recipes that use it come first." }
         let count = shown.count
-        return count == 1 ? "1 recipe uses what you have" : "\(count) recipes use what you have"
+        switch filter {
+        case .favorites: return count == 1 ? "1 favorite uses what you have" : "\(count) favorites use what you have"
+        case .cooked: return count == 1 ? "1 cooked recipe uses what you have" : "\(count) cooked recipes use what you have"
+        default: return count == 1 ? "1 recipe uses what you have" : "\(count) recipes use what you have"
+        }
     }
 
     // MARK: - Filters
@@ -318,10 +322,10 @@ struct CookbookView: View {
         } else if filter == .later {
             ChefStateView(animation: .empty, title: "Nothing saved for later",
                           message: "When a reel has no recipe yet, save it for later and check again once the creator posts it.")
-        } else if filter == .favorites, picks.isEmpty {
+        } else if filter == .favorites, !(store.recipes ?? []).contains(where: \.favorite) {
             ChefStateView(animation: .empty, title: "No favorites yet",
                           message: "Tap the heart on a recipe to keep it here.")
-        } else if filter == .cooked, picks.isEmpty {
+        } else if filter == .cooked, !(store.recipes ?? []).contains(where: \.tried) {
             ChefStateView(animation: .empty, title: "Nothing cooked yet",
                           message: "Mark a recipe as cooked once you've made it.")
         } else {
@@ -361,12 +365,12 @@ struct CookbookView: View {
             ("Added \(job.title ?? "a new recipe")", "Tap to open it.")
         case (_, "skipped", _): ("Already in your library: \(job.title ?? source)", "Tap to open it.")
         case _ where kept: ("No recipe yet: \(job.title ?? source)",
-                            checkingAgain ? "Still no recipe in the post. It stays in Later."
+                            checkingAgain ? "Still no recipe in the reel. It stays in Later."
                                           : "Saved in Later. Check again once the creator posts the recipe.")
         case (_, _, "needs_recipe"): ("No recipe yet: \(job.title ?? source)",
-                                      "The post points to a blog or a bio link. Save it for later?")
+                                      "The reel points to a blog or a bio link. Save it for later?")
         default: ("Not a recipe: \(job.title ?? source)",
-                  "There's no ingredient list in that post. If the recipe is coming, save it for later.")
+                  "There's no ingredient list in that reel. If the recipe is coming, save it for later.")
         }
         return StatusRow(title: title, detail: detail,
                          onDismiss: job.isActive ? nil : { store.dismissJob(job.id) }) {
