@@ -73,6 +73,8 @@ nonisolated struct PantryMatch: Identifiable {
     let matched: Int
     /// Its other ingredients, staples left out.
     let missing: [String]
+    /// All its ingredients, staples left out (for "you have 3 of 5").
+    let total: Int
     var missingCount: Int { missing.count }
 }
 

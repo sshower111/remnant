@@ -110,6 +110,15 @@ final class RecipeStore {
         checkJobsNow = true
     }
 
+    /// A reel link pasted in the app (the same as sharing it to Remnant): the PC adds it in the
+    /// background and the job shows above the library.
+    func addLink(_ url: String) async throws {
+        let job = try await APIClient.current().ingest(url)
+        ingestJobs.removeAll { $0.id == job.id }
+        ingestJobs.insert(job, at: 0)
+        checkJobsNow = true
+    }
+
     /// Swipe-to-remove: gone from the feed at once, hidden on the PC (kept in its database, so
     /// it can be undone and the reel isn't downloaded again if shared). Put back if the PC refuses.
     func hide(_ id: Int) async -> Bool {

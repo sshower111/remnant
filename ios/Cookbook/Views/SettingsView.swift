@@ -20,13 +20,13 @@ struct SettingsView: View {
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                        .foregroundStyle(Color.ink)
+                        .foregroundStyle(Color.textPrimary)
                         .onChange(of: serverURL) { test = .idle }
                     Button {
                         Task { await testConnection() }
                     } label: {
                         HStack {
-                            Text("Test connection").foregroundStyle(Color.terracotta)
+                            Text("Test connection").foregroundStyle(Color.ember)
                             Spacer()
                             testResult
                         }
@@ -35,38 +35,38 @@ struct SettingsView: View {
                     if case .failure(let message) = test {
                         Text(message)
                             .font(.footnote)
-                            .foregroundStyle(Color.muted)
+                            .foregroundStyle(Color.textSecondary)
                     }
                     if serverURL != APIClient.defaultServerURL {
                         Button("Use the default address") { serverURL = APIClient.defaultServerURL }
-                            .foregroundStyle(Color.muted)
+                            .foregroundStyle(Color.textSecondary)
                     }
                 } header: {
                     Text("Recipe server")
                 } footer: {
-                    Text("The PC running `uvicorn api.app:app --host 0.0.0.0 --port 8000`, on the same Wi-Fi.")
+                    Text("Your PC's address on home Wi-Fi. Start the server there with `uvicorn api.app:app --host 0.0.0.0 --port 8000`.")
                 }
 
                 Section {
                     Toggle("Show steps when you leave a recipe", isOn: $autoStart)
-                        .tint(.terracotta)
+                        .tint(.ember)
                 } header: {
                     Text("Dynamic Island")
                 } footer: {
-                    Text("Watch on Instagram always shows the current step in the Dynamic Island. With this on, it also appears when you press Home or switch apps while a recipe is open.")
+                    Text("Watch always shows the current step in the Dynamic Island. With this on, it also appears when you press Home or switch apps while a recipe is open.")
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color.cream)
+            .background(Color.canvas)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
-                        .foregroundStyle(Color.terracotta)
                 }
             }
         }
+        .tint(.ember)
         // A new address takes effect for the feed as soon as Settings closes.
         .onDisappear { Task { await store.load() } }
     }
@@ -78,11 +78,11 @@ struct SettingsView: View {
         case .testing: AnimatedChefView(.loading, size: 32)
         case .success(let count):
             Label("\(count) recipes", systemImage: "checkmark.circle.fill")
-                .foregroundStyle(.green)
+                .foregroundStyle(Color.ember)
                 .font(.subheadline)
         case .failure:
             Label("No answer", systemImage: "xmark.circle.fill")
-                .foregroundStyle(Color.heart)
+                .foregroundStyle(Color.textSecondary)
                 .font(.subheadline)
         }
     }

@@ -108,41 +108,40 @@ final class ShareModel {
     }
 }
 
-private let cream = Color(red: 0xFA / 255, green: 0xF8 / 255, blue: 0xF5 / 255)
-private let ink = Color(red: 0x2B / 255, green: 0x26 / 255, blue: 0x22 / 255)
-private let muted = Color(red: 0x8A / 255, green: 0x81 / 255, blue: 0x7A / 255)
-private let terracotta = Color(red: 0xC8 / 255, green: 0x6D / 255, blue: 0x51 / 255)
+// Colors come from Shared/Remnant.xcassets (light and dark), like the app's.
 
 struct ShareView: View {
     let model: ShareModel
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             icon
-                .font(.system(size: 34, weight: .medium))
-                .foregroundStyle(terracotta)
+                .font(.largeTitle.weight(.medium))
+                .foregroundStyle(Color.ember)
                 .frame(height: model.phase == .sending ? 88 : 44)
+                .accessibilityHidden(true)
             Text(title)
-                .font(.system(size: 26, design: .serif))
-                .foregroundStyle(ink)
+                .font(.system(.title2, design: .serif, weight: .bold))
+                .foregroundStyle(Color.textPrimary)
                 .multilineTextAlignment(.center)
+                .accessibilityAddTraits(.isHeader)
             Text(detail)
                 .font(.subheadline)
-                .foregroundStyle(muted)
+                .foregroundStyle(Color.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             if model.phase != .sending {
                 Button("Done") { model.close() }
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: 220, minHeight: 46)
-                    .background(terracotta, in: .capsule)
-                    .padding(.top, 6)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.onEmber)
+                    .frame(maxWidth: 220, minHeight: 44)
+                    .background(Color.ember, in: .capsule)
+                    .padding(.top, 8)
             }
         }
-        .padding(28)
+        .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(cream)
+        .background(Color.canvas)
         .sensoryFeedback(.success, trigger: model.phase) { _, phase in phase == .adding }
     }
 
@@ -167,8 +166,8 @@ struct ShareView: View {
     private var detail: String {
         switch model.phase {
         case .sending: "Sending the link to your PC."
-        case .adding: "Your PC is reading the video. The recipe shows up in the feed in a couple of minutes."
-        case .alreadyThere(let title): title.map { "“\($0)” is saved already." } ?? "This post is saved already."
+        case .adding: "Your PC is reading the video. The recipe shows up in Remnant in a few minutes."
+        case .alreadyThere(let title): title.map { "“\($0)” is in your library already." } ?? "This reel is in your library already."
         case .failed(let message): message
         }
     }

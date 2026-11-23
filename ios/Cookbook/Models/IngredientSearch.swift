@@ -65,7 +65,7 @@ enum IngredientSearch {
                 picks.contains { strength(of: $0, for: ingredient) > .none }
             }.map(\.name))
             let match = PantryMatch(recipeId: recipe.id, matched: matched,
-                                    missing: names.filter { !have.contains($0) })
+                                    missing: names.filter { !have.contains($0) }, total: names.count)
             return (recipe, match, used.filter { $0 == .strong }.count)
         }
         return scored.sorted { a, b in

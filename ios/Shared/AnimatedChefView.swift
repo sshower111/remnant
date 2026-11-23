@@ -58,5 +58,5 @@ struct AnimatedChefView: View {
         AnimatedChefView(.success, size: 68)
     }
     .padding()
-    .background(Color(red: 0xFA / 255, green: 0xF8 / 255, blue: 0xF5 / 255))
+    .background(Color.canvas)
 }

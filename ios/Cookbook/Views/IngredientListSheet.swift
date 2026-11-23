@@ -1,11 +1,13 @@
 import SwiftUI
 
-/// The whole ingredient list on one screen (from the recipe's "N ingredients" pill), easier to
-/// shop from than the swipeable tiles. Tap a line to tick it off while shopping.
+/// The whole ingredient list on one screen (the recipe's Shopping list, cook mode's Ingredients).
+/// Tap a line to tick it off; in cook mode the current step's ingredients are marked.
 struct IngredientListSheet: View {
     let title: String
     let yieldLabel: String?
     let ingredients: [Ingredient]
+    /// Indexes the current cook step uses.
+    var highlighted: Set<Int> = []
     @Environment(\.dismiss) private var dismiss
     @State private var ticked: Set<Int> = []
 
@@ -14,57 +16,67 @@ struct IngredientListSheet: View {
             List {
                 Section {
                     ForEach(ingredients.indices, id: \.self) { index in
-                        row(ingredients[index], ticked: ticked.contains(index))
-                            .contentShape(.rect)
-                            .onTapGesture {
-                                if ticked.contains(index) { ticked.remove(index) } else { ticked.insert(index) }
-                            }
-                            .listRowBackground(Color.clear)
-                            .listRowSeparatorTint(Color.sand)
-                            .accessibilityAddTraits(.isButton)
-                            .accessibilityValue(ticked.contains(index) ? "Ticked" : "")
+                        Button {
+                            if ticked.contains(index) { ticked.remove(index) } else { ticked.insert(index) }
+                        } label: {
+                            row(ingredients[index], ticked: ticked.contains(index), inStep: highlighted.contains(index))
+                        }
+                        .buttonStyle(.plain)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparatorTint(Color.hairline)
+                        .accessibilityLabel(ingredients[index].spoken + (highlighted.contains(index) ? ", used in this step" : ""))
+                        .accessibilityValue(ticked.contains(index) ? "Ticked" : "")
+                        .accessibilityHint("Ticks it off")
                     }
                 } header: {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Spacing.xxs) {
                         Text(title)
-                            .font(.serifTitle(26))
-                            .foregroundStyle(Color.ink)
-                        Text([yieldLabel, "\(ingredients.count) ingredients"].compactMap { $0 }.joined(separator: " · "))
+                            .font(.stateTitle)
+                            .foregroundStyle(Color.textPrimary)
+                        Text([yieldLabel?.capitalizedFirst, "\(ingredients.count) ingredients"].compactMap { $0 }.joined(separator: " · "))
                             .font(.subheadline)
-                            .foregroundStyle(Color.muted)
+                            .foregroundStyle(Color.textSecondary)
                     }
                     .textCase(nil)
-                    .padding(.bottom, 8)
+                    .padding(.bottom, Spacing.xs)
                 }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
-            .background(Color.cream)
+            .background(Color.canvas)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
-                        .fontWeight(.semibold)
                 }
             }
         }
-        .tint(.terracotta)
+        .tint(.ember)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
 
-    private func row(_ ingredient: Ingredient, ticked: Bool) -> some View {
+    private func row(_ ingredient: Ingredient, ticked: Bool, inStep: Bool) -> some View {
         let quantity = ingredient.quantity
-        return HStack(spacing: 14) {
+        return HStack(spacing: Spacing.s) {
             Image(systemName: ticked ? "checkmark.circle.fill" : "circle")
                 .font(.title3)
-                .foregroundStyle(ticked ? Color.terracotta : Color.sand)
+                .foregroundStyle(ticked ? Color.ember : Color.textSecondary)
             (Text(quantity.isEmpty ? "" : quantity + " ").fontWeight(.semibold) + Text(ingredient.label))
-                .foregroundStyle(Color.ink)
-                .strikethrough(ticked, color: Color.muted)
-                .opacity(ticked ? 0.45 : 1)
+                .foregroundStyle(Color.textPrimary)
+                .strikethrough(ticked, color: Color.textSecondary)
+                .opacity(ticked ? 0.5 : 1)
             Spacer(minLength: 0)
+            if inStep {
+                Text("This step")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.ember)
+                    .padding(.horizontal, Spacing.xs)
+                    .padding(.vertical, 3)
+                    .background(Color.emberSoft, in: .capsule)
+            }
         }
-        .padding(.vertical, 6)
+        .frame(minHeight: minTouch)
+        .contentShape(.rect)
     }
 }

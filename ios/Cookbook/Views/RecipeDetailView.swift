@@ -1,7 +1,8 @@
 import SwiftUI
 import UIKit
 
-/// One recipe: hero, title, caption, pills, actions, ingredients and steps.
+/// One recipe, photo first: the full-bleed photo with the title and creator over it, the actions
+/// as pills (Start cooking first), the key facts in labeled columns, then ingredients and steps.
 struct RecipeDetailView: View {
     let recipeId: Int
     @Environment(RecipeStore.self) private var store
@@ -11,12 +12,14 @@ struct RecipeDetailView: View {
     @State private var showFullCaption = false
     /// Cooking progress; the Live Activity's ‹ › buttons can move it while the app is away.
     @State private var session: CookingSession?
-    /// The full ingredient list (tap "N ingredients"), for shopping.
+    /// Cook mode, full screen.
+    @State private var cooking = false
+    /// The whole ingredient list, for shopping.
     @State private var showIngredientList = false
     /// "Check again" sent and not yet confirmed by the PC (no recipe yet posts).
     @State private var checkRequested = false
     @State private var checkError: String?
-    /// ▶ found no app for the post (e.g. Instagram not installed): offer Safari instead.
+    /// Watch found no app for the post (e.g. Instagram not installed): offer Safari instead.
     @State private var appMissing: AppMissing?
 
     private static let platformNames = ["instagram": "Instagram", "youtube": "YouTube", "tiktok": "TikTok"]
@@ -26,46 +29,30 @@ struct RecipeDetailView: View {
             if let recipe = store.details[recipeId] {
                 content(recipe)
             } else if let error {
-                ParseErrorView(title: "Couldn't load this recipe", message: error) {
-                    Button("Try again") { Task { await load() } }
-                        .tint(.terracotta)
+                ParseErrorView(title: "Couldn't open this recipe", message: error) {
+                    Button("Try again", systemImage: "arrow.clockwise") { Task { await load() } }
+                        .buttonStyle(.primaryPill)
                 }
-                .padding(32)
+                .padding(Spacing.xl)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ChefLoadingView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .background(Color.cream)
-        // The bar's heart can clip its own animation, so the burst sits on the page, lined
-        // up under the trailing toolbar button.
-        .overlay(alignment: .topTrailing) {
-            if let recipe = store.details[recipeId] {
-                HeartBurst(isFavorite: recipe.favorite)
-                    .frame(width: 44, height: 44)
-                    .padding(.trailing, 16)
-                    .offset(y: -44)
-            }
-        }
+        .background(Color.canvas)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             if let recipe = store.details[recipeId] {
                 ToolbarItem(placement: .topBarTrailing) {
-                    // A custom label, not Button(_:systemImage:): the bar draws standard
-                    // toolbar symbols with a translucent tint, and the filled heart must be solid.
                     Button {
                         Task { await store.toggle(.favorite, for: recipeId) }
                     } label: {
                         Image(systemName: recipe.favorite ? "heart.fill" : "heart")
-                            .symbolRenderingMode(.monochrome)
-                            .fontWeight(.medium)
-                            .foregroundStyle(recipe.favorite ? Color.heart : Color.softWhite)
-                            .shadow(color: .black.opacity(0.3), radius: 1.5, y: 0.5)  // readable on light photos
+                            .foregroundStyle(recipe.favorite ? Color.ember : Color.textPrimary)
                             .symbolEffect(.bounce, value: recipe.favorite)
                     }
-                    .tint(recipe.favorite ? Color.heart : Color.softWhite)
                     .accessibilityLabel(recipe.favorite ? "Remove from favorites" : "Add to favorites")
                     .sensoryFeedback(.selection, trigger: recipe.favorite)
                 }
@@ -77,16 +64,35 @@ struct RecipeDetailView: View {
                   primaryButton: .default(Text("Open in Safari")) { openURL(missing.url) },
                   secondaryButton: .cancel())
         }
-        // The system back arrow takes the tint: soft white over the photo, like the heart.
-        .tint(.softWhite)
+        .fullScreenCover(isPresented: $cooking) {
+            if let recipe = store.details[recipeId], let session {
+                CookModeView(recipe: recipe, session: session,
+                             onMarkCooked: { Task { await store.toggle(.tried, for: recipeId) } })
+            }
+        }
+        .sheet(isPresented: $showIngredientList) {
+            if let recipe = store.details[recipeId] {
+                IngredientListSheet(title: recipe.title, yieldLabel: recipe.yieldLabel, ingredients: recipe.ingredients)
+            }
+        }
         // Refresh on every visit (steps may have been re-parsed on the PC); cached copy shows meanwhile.
         .task { await load() }
-        // Back to the cookbook: leaving the app no longer starts the island for this recipe.
+        // Back to the library: leaving the app no longer starts the island for this recipe.
         .onDisappear {
-            if LiveActivityController.onScreen?.id == recipeId { LiveActivityController.onScreen = nil }
+            if LiveActivityController.onScreen?.id == recipeId, !cooking { LiveActivityController.onScreen = nil }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { session?.reload() }
+        }
+        // Opened from the Live Activity: straight into cook mode at its step.
+        .onChange(of: store.stepToReveal, initial: true) { _, id in
+            guard id == recipeId, let recipe = store.details[recipeId], !recipe.steps.isEmpty else { return }
+            store.stepToReveal = nil
+            updateSession()
+            Task {
+                try? await Task.sleep(for: .milliseconds(350))  // let the push finish first
+                cooking = true
+            }
         }
     }
 
@@ -95,7 +101,7 @@ struct RecipeDetailView: View {
             try await store.loadRecipe(recipeId)
             error = nil
         } catch {
-            self.error = error.localizedDescription
+            if store.details[recipeId] == nil { self.error = error.localizedDescription }
         }
         updateSession()
     }
@@ -111,214 +117,134 @@ struct RecipeDetailView: View {
         }
     }
 
+    // MARK: - Layout
+
     private func content(_ recipe: Recipe) -> some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    hero(recipe)
-                    header(recipe)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 28)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                hero(recipe)
+                VStack(alignment: .leading, spacing: Spacing.l) {
+                    actions(recipe)
+                    if !recipe.ingredients.isEmpty {
+                        MetadataColumns(items: facts(recipe))
+                    }
+                    caption(recipe)
                     if recipe.ingredients.isEmpty {
                         noRecipeYet(recipe)
-                            .padding(.horizontal, 16)
-                            .padding(.top, 32)
                     } else {
                         ingredients(recipe)
-                            .padding(.top, 40)
                         steps(recipe)
-                            .padding(.horizontal, 16)
-                            .padding(.top, 48)
                     }
                 }
-                .padding(.bottom, 64)
-            }
-            // Opened from the Live Activity: jump to the step card, which shows its step.
-            .onChange(of: store.stepToReveal, initial: true) { _, id in
-                guard id == recipeId, !recipe.steps.isEmpty else { return }
-                store.stepToReveal = nil
-                updateSession()
-                Task {
-                    try? await Task.sleep(for: .milliseconds(350))  // let the push finish first
-                    withAnimation(.easeInOut(duration: 0.4)) {
-                        proxy.scrollTo(CookingModeView.focusID, anchor: .top)
-                    }
-                }
+                .padding(.horizontal, Spacing.m)
+                .padding(.top, Spacing.m)
+                .padding(.bottom, Spacing.xl)
             }
         }
+        .ignoresSafeArea(edges: .top)
     }
 
+    /// The photo edge to edge, the title and creator on a scrim at its foot.
     private func hero(_ recipe: Recipe) -> some View {
-        Color.sandSoft
+        Color.surface
             .aspectRatio(4 / 5, contentMode: .fit)
-            .overlay { Thumbnail(url: store.thumbnailURL(recipe.thumbnailUrl), title: recipe.title, initialSize: 96, maxPoints: 500) }
-            .clipShape(.rect(cornerRadius: 32))
-            .padding(.horizontal, 12)
-    }
-
-    private func header(_ recipe: Recipe) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(recipe.title)
-                .font(.serifTitle(36))
-                .foregroundStyle(Color.ink)
-            if let uploader = recipe.uploader {
-                Text("by \(uploader)")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.muted)
-                    .padding(.top, 8)
+            .overlay {
+                Thumbnail(url: store.thumbnailURL(recipe.thumbnailUrl), title: recipe.title, initialSize: 96, maxPoints: 500)
             }
-
-            let caption = recipe.caption
-            if !caption.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(caption)
-                        .font(.callout)
-                        .foregroundStyle(Color.muted)
-                        .lineLimit(showFullCaption ? nil : 3)
-                        .lineSpacing(3)
-                    Button(showFullCaption ? "See less" : "See more") {
-                        withAnimation(.easeOut(duration: 0.2)) { showFullCaption.toggle() }
+            .overlay(alignment: .bottom) { PhotoScrim().frame(height: 260) }
+            .overlay(alignment: .bottomLeading) {
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                    Text(recipe.title)
+                        .font(.display)
+                        .foregroundStyle(.white)
+                        .lineLimit(4)
+                        .minimumScaleFactor(0.7)
+                        .accessibilityAddTraits(.isHeader)
+                    if let uploader = recipe.uploader {
+                        Text("by \(uploader)")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.85))
                     }
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.ink)
-                    .underline()
                 }
-                .padding(.top, 16)
+                .padding(.horizontal, Spacing.m)
+                .padding(.bottom, Spacing.m)
+                .accessibilityElement(children: .combine)
             }
+            .clipped()
+            .accessibilityElement(children: .contain)
+    }
 
-            FlowLayout(spacing: 8) {
-                if recipe.ingredients.isEmpty {
-                    pill("No recipe yet")
-                } else {
-                    if let yieldLabel = recipe.yieldLabel { pill(yieldLabel) }
-                    // Opens the whole list at once, for shopping.
-                    Button { showIngredientList = true } label: {
-                        pill("\(recipe.ingredients.count) ingredients", systemImage: "list.bullet")
+    /// Start cooking (or Resume) first, then Watch, Shopping list and Cooked.
+    private func actions(_ recipe: Recipe) -> some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: Spacing.xs) {
+                if !recipe.steps.isEmpty, let session {
+                    Button(startTitle(session), systemImage: "frying.pan") { cooking = true }
+                        .buttonStyle(.primaryPill)
+                }
+                watchButton(recipe, primary: recipe.steps.isEmpty && !recipe.ingredients.isEmpty)
+                if !recipe.ingredients.isEmpty {
+                    Button("Shopping list", systemImage: "checklist") { showIngredientList = true }
+                        .buttonStyle(.secondaryPill)
+                    Button {
+                        Task { await store.toggle(.tried, for: recipeId) }
+                    } label: {
+                        Label(recipe.tried ? "Cooked" : "Mark as cooked", systemImage: recipe.tried ? "checkmark.circle.fill" : "checkmark.circle")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityHint("Shows the full ingredient list")
-                    if !recipe.steps.isEmpty { pill("\(recipe.steps.count) steps") }
+                    .buttonStyle(.pill(recipe.tried ? .selected : .secondary))
+                    .accessibilityAddTraits(recipe.tried ? .isSelected : [])
+                    .sensoryFeedback(.success, trigger: recipe.tried) { _, tried in tried }
                 }
             }
-            .padding(.top, 20)
-            .sheet(isPresented: $showIngredientList) {
-                IngredientListSheet(title: recipe.title, yieldLabel: recipe.yieldLabel,
-                                    ingredients: recipe.ingredients)
-            }
-
-            FlowLayout(spacing: 8) {
-                if !recipe.ingredients.isEmpty { triedButton(recipe) }  // nothing to cook yet
-                watchButton(recipe)
-            }
-            .padding(.top, 20)
+            .padding(.horizontal, Spacing.m)
         }
+        .scrollIndicators(.hidden)
+        .padding(.horizontal, -Spacing.m)
     }
 
-    private func pill(_ text: String, systemImage: String? = nil) -> some View {
-        HStack(spacing: 5) {
-            if let systemImage {
-                Image(systemName: systemImage).font(.caption.weight(.semibold))
-            }
-            Text(text)
-        }
-        .font(.subheadline)
-        .foregroundStyle(Color.ink)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 5)
-        .overlay { Capsule().strokeBorder(Color.sand) }
-        .contentShape(.capsule)
+    /// "Start cooking", or "Resume · Step 4" when part-way through.
+    private func startTitle(_ session: CookingSession) -> String {
+        if session.allDone { return "Cook again" }
+        return session.cookingStarted ? "Resume · Step \(session.active + 1)" : "Start cooking"
     }
 
-    /// A post kept without a recipe (🔖 Saved): Check again re-reads it on the PC, for when the
-    /// creator adds the recipe to the caption or links it. Recipes posted only in the comments
-    /// still can't be read (yt-dlp gets few comments signed out; see CLAUDE.md).
-    private func noRecipeYet(_ recipe: Recipe) -> some View {
-        let checking = store.ingestJobs.contains { $0.isActive && $0.recipeId == recipe.id }
-            || checkRequested
-        let kept = recipe.status == "needs_recipe"
-        return VStack(alignment: .leading, spacing: 12) {
-            Label("No recipe yet", systemImage: "bookmark")
-                .font(.serifTitle(26))
-                .foregroundStyle(Color.ink)
-            Text(kept
-                 ? "Kept in 🔖 for later. When the creator adds the recipe to the caption or links it, Check again reads the post again."
-                 : "This post has no ingredient list. If the recipe is coming, save it for later and check again then.")
-                .font(.callout)
-                .foregroundStyle(Color.muted)
-                .fixedSize(horizontal: false, vertical: true)
-            if let note = checkError {
-                Text(note)
-                    .font(.footnote)
-                    .foregroundStyle(Color.heart)
-            }
-            HStack(spacing: 10) {
-                Button {
-                    checkError = nil
-                    checkRequested = true
-                    Task {
-                        do { try await store.checkAgain(recipe) } catch {
-                            checkError = store.offlineSince != nil
-                                ? "Checking again needs the PC, which is out of reach right now."
-                                : "Couldn't ask the PC: \(error.localizedDescription)"
-                        }
-                        checkRequested = false
-                    }
-                } label: {
-                    HStack(spacing: 8) {
-                        if checking { AnimatedChefView(.loading, size: 30) } else { Image(systemName: "arrow.clockwise") }
-                        Text(checking ? "Checking on your PC…" : "Check again")
-                    }
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .frame(minHeight: 44)
-                    .background(Color.terracotta, in: .capsule)
-                }
-                .buttonStyle(.plain)
-                .disabled(checking)
-
-                Button(kept ? "Remove from 🔖" : "Save for later") {
-                    Task { try? await store.setStatus(kept ? "not_recipe" : "needs_recipe", for: recipe.id) }
-                }
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(Color.ink)
-                .padding(.horizontal, 16)
-                .frame(minHeight: 44)
-                .overlay { Capsule().strokeBorder(Color.sand) }
-                .buttonStyle(.plain)
-            }
-            .padding(.top, 4)
+    private func facts(_ recipe: Recipe) -> [MetadataColumns.Item] {
+        var items = [MetadataColumns.Item(label: "Ingredients", value: "\(recipe.ingredients.count)")]
+        if !recipe.steps.isEmpty { items.append(.init(label: "Steps", value: "\(recipe.steps.count)")) }
+        if let yieldLabel = recipe.yieldLabel { items.append(.init(label: "Makes", value: yieldLabel.capitalizedFirst)) }
+        if let platform = recipe.video.platform.flatMap({ Self.platformNames[$0] }) {
+            items.append(.init(label: "From", value: platform))
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.6), in: .rect(cornerRadius: 24))
-        .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(Color.sand) }
+        return items
     }
 
-    /// Mark as cooked and ▶ share one height.
-    private static let actionHeight: CGFloat = 40
-
-    private func triedButton(_ recipe: Recipe) -> some View {
-        Button {
-            Task { await store.toggle(.tried, for: recipeId) }
-        } label: {
-            Label(recipe.tried ? "Cooked it" : "Mark as cooked", systemImage: "checkmark")
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(recipe.tried ? Color.terracotta : Color.ink)
-                .padding(.horizontal, 16)
-                .frame(height: Self.actionHeight)
-                .background(recipe.tried ? Color.terracottaSoft : Color.white.opacity(0.7), in: .capsule)
-                .overlay { Capsule().strokeBorder(recipe.tried ? Color.clear : Color.sand) }
-        }
-        .buttonStyle(.plain)
-        .sensoryFeedback(.success, trigger: recipe.tried) { _, tried in tried }
-    }
-
-    /// ▶: starts the Live Activity on the current step, then opens the post in its app
-    /// (Instagram etc.), so the step follows along in the Dynamic Island. Only the app: a
-    /// browser asks people to sign in, so without the app installed it asks first.
     @ViewBuilder
-    private func watchButton(_ recipe: Recipe) -> some View {
+    private func caption(_ recipe: Recipe) -> some View {
+        let caption = recipe.caption
+        if !caption.isEmpty {
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                Text(caption)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.textSecondary)
+                    .lineLimit(showFullCaption ? nil : 3)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button(showFullCaption ? "Show less" : "Show more") {
+                    withAnimation(.easeOut(duration: 0.2)) { showFullCaption.toggle() }
+                }
+                .font(.subheadline.weight(.semibold))
+                .frame(minHeight: minTouch)
+                .accessibilityLabel(showFullCaption ? "Show less of the caption" : "Show the whole caption")
+            }
+        }
+    }
+
+    // MARK: - Watch
+
+    /// Watch: starts the Live Activity on the current step, then opens the post in its app
+    /// (Instagram etc.), so the step follows along in the Dynamic Island. Only the app: a browser
+    /// asks people to sign in, so without the app installed it asks first.
+    @ViewBuilder
+    private func watchButton(_ recipe: Recipe, primary: Bool) -> some View {
         if let url = URL(string: recipe.video.url) {
             let platform = recipe.video.platform.flatMap { Self.platformNames[$0] }
             Button {
@@ -331,16 +257,9 @@ struct RecipeDetailView: View {
                     }
                 }
             } label: {
-                // Same look and height as Mark as cooked, beside it.
-                Image(systemName: "play.fill")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.ink)
-                    .padding(.horizontal, 18)
-                    .frame(height: Self.actionHeight)
-                    .background(Color.white.opacity(0.7), in: .capsule)
-                    .overlay { Capsule().strokeBorder(Color.sand) }
+                Label("Watch", systemImage: "play.rectangle")
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pill(primary ? .primary : .secondary))
             .accessibilityLabel(platform.map { "Watch on \($0)" } ?? "Watch the video")
         }
     }
@@ -351,44 +270,138 @@ struct RecipeDetailView: View {
         var id: String { url.absoluteString }
     }
 
+    // MARK: - Ingredients and steps
+
     private func ingredients(_ recipe: Recipe) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Ingredients")
-                .font(.serifTitle(30))
-                .foregroundStyle(Color.ink)
-                .padding(.horizontal, 16)
-
-            IngredientRow(ingredients: recipe.ingredients, active: session?.activeIngredients ?? [])
-
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            SectionHeader(title: "Ingredients") {
+                if let yieldLabel = recipe.yieldLabel {
+                    Text(yieldLabel)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.textSecondary)
+                }
+            }
+            IngredientRow(ingredients: recipe.ingredients)
+                .padding(.horizontal, -Spacing.m)
             if let page = recipe.recipePageUrl.flatMap(URL.init(string:)) {
                 Link(destination: page) {
-                    Label("Full recipe page", systemImage: "arrow.up.right.square")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.muted)
-                        .underline()
+                    Label("Full recipe on the creator's site", systemImage: "arrow.up.right")
+                        .font(.subheadline.weight(.medium))
+                        .frame(minHeight: minTouch)
                 }
-                .padding(.horizontal, 16)
             }
         }
     }
 
-    /// Cooking mode; the step in focus is the one the Dynamic Island follows.
+    /// Every step, numbered; tap one to cook from there. Ticked-off steps are dimmed.
+    @ViewBuilder
     private func steps(_ recipe: Recipe) -> some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Cooking Steps")
-                .font(.serifTitle(30))
-                .foregroundStyle(Color.ink)
-
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            SectionHeader("Steps")
             if recipe.steps.isEmpty {
                 Text("The post doesn't describe the method. Watch the video to follow along.")
-                    .foregroundStyle(Color.muted)
-                    .padding(20)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.white.opacity(0.6), in: .rect(cornerRadius: 24))
-                    .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(Color.sand) }
-            } else if let session {
-                CookingModeView(session: session, ingredients: recipe.ingredients, tried: recipe.tried,
-                                onMarkTried: { Task { await store.toggle(.tried, for: recipeId) } })
+                    .font(.body)
+                    .foregroundStyle(Color.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(recipe.steps.indices, id: \.self) { index in
+                        stepRow(recipe.steps[index], index: index, count: recipe.steps.count)
+                        if index < recipe.steps.count - 1 {
+                            Rectangle().fill(Color.hairline).frame(height: 0.5).padding(.leading, 40)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func stepRow(_ step: Step, index: Int, count: Int) -> some View {
+        let done = session?.progress.done.contains(index) == true
+        return Button {
+            session?.select(index)
+            cooking = true
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
+                Group {
+                    if done {
+                        Image(systemName: "checkmark")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(Color.ember)
+                    } else {
+                        Text(index + 1, format: .number)
+                            .font(.subheadline.weight(.semibold))
+                            .monospacedDigit()
+                            .foregroundStyle(Color.textSecondary)
+                    }
+                }
+                .frame(width: 28, alignment: .leading)
+                Text(step.text)
+                    .font(.body)
+                    .foregroundStyle(done ? Color.textSecondary : Color.textPrimary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            }
+            .padding(.vertical, Spacing.s)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Step \(index + 1) of \(count)\(done ? ", done" : ""). \(step.text)")
+        .accessibilityHint("Starts cooking from this step")
+    }
+
+    // MARK: - No recipe yet
+
+    /// A post kept without a recipe (Later): Check again re-reads it on the PC, for when the
+    /// creator adds the recipe to the caption or links it. Recipes posted only in the comments
+    /// still can't be read (yt-dlp gets few comments signed out; see CLAUDE.md).
+    private func noRecipeYet(_ recipe: Recipe) -> some View {
+        let checking = store.ingestJobs.contains { $0.isActive && $0.recipeId == recipe.id }
+            || checkRequested
+        let kept = recipe.status == "needs_recipe"
+        return VStack(alignment: .leading, spacing: Spacing.s) {
+            SectionHeader("No recipe yet")
+            Text(kept
+                 ? "Saved in Later. Once the creator adds the recipe to the caption or links it, check again and your PC reads the post again."
+                 : "This post has no ingredient list. If the recipe is coming, save it for later and check again then.")
+                .font(.body)
+                .foregroundStyle(Color.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if let note = checkError {
+                Label(note, systemImage: "exclamationmark.triangle")
+                    .font(.footnote)
+                    .foregroundStyle(Color.textPrimary)
+            }
+            HStack(spacing: Spacing.xs) {
+                Button {
+                    checkError = nil
+                    checkRequested = true
+                    Task {
+                        do { try await store.checkAgain(recipe) } catch {
+                            checkError = store.offlineSince != nil
+                                ? "Checking again needs your PC, which is out of reach right now."
+                                : "Couldn't reach your PC: \(error.localizedDescription)"
+                        }
+                        checkRequested = false
+                    }
+                } label: {
+                    if checking {
+                        HStack(spacing: Spacing.xs) {
+                            AnimatedChefView(.loading, size: 28)
+                            Text("Checking…")
+                        }
+                    } else {
+                        Label("Check again", systemImage: "arrow.clockwise")
+                    }
+                }
+                .buttonStyle(.primaryPill)
+                .disabled(checking)
+
+                Button(kept ? "Remove from Later" : "Save for later", systemImage: kept ? "bookmark.slash" : "bookmark") {
+                    Task { try? await store.setStatus(kept ? "not_recipe" : "needs_recipe", for: recipe.id) }
+                }
+                .buttonStyle(.secondaryPill)
             }
         }
     }

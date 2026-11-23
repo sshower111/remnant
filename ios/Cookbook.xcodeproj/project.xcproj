@@ -15,9 +15,9 @@
       "kind": "folder",
       "path": "Shared",
       "target-membership": [
+        "AddToCookbook",
         "Cookbook",
         "CookingActivityExtension",
-        "AddToCookbook",
       ],
       "membership-exceptions": [
         {
@@ -28,8 +28,7 @@
           ],
         },
       ],
-    },
-    {
+    }, {
       "kind": "folder",
       "path": "Cookbook",
       "target-membership": [

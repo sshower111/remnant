@@ -32,14 +32,14 @@ struct Thumbnail: View {
             if let image {
                 Image(uiImage: image).resizable().scaledToFill()
             } else if url == nil || failed {
-                LinearGradient(colors: [.sandSoft, .sand], startPoint: .topLeading, endPoint: .bottomTrailing)
+                Color.surface
                     .overlay {
                         Text(title.trimmingCharacters(in: .whitespaces).prefix(1).uppercased())
-                            .font(.serifTitle(initialSize))
-                            .foregroundStyle(Color.muted)
+                            .font(.system(size: initialSize, weight: .semibold, design: .serif))
+                            .foregroundStyle(Color.textSecondary)
                     }
             } else {
-                Color.sandSoft
+                Color.surface
             }
         }
         .accessibilityHidden(true)
