@@ -65,7 +65,7 @@ struct RefreshingChefView: View {
     var body: some View {
         HStack(spacing: Spacing.s) {
             AnimatedChefView(.refresh, size: 44)
-            Text("Checking your PC for new recipes…")
+            Text("Checking for new recipes…")
                 .font(.footnote.weight(.medium))
                 .foregroundStyle(Color.textSecondary)
         }

@@ -17,7 +17,7 @@ struct AddReelSheet: View {
                 VStack(alignment: .leading, spacing: Spacing.s) {
                     step(1, "In Instagram, TikTok or YouTube, open the reel and tap Share.")
                     step(2, "Tap Remnant. If it isn't there, tap More and turn it on.")
-                    step(3, "Your PC reads the reel. The recipe shows up here in a few minutes.")
+                    step(3, "Remnant reads the reel. The recipe shows up here in a few minutes.")
                 }
 
                 VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -36,7 +36,7 @@ struct AddReelSheet: View {
                         .disabled(state == .sending)
                         if state == .sending {
                             AnimatedChefView(.loading, size: 36)
-                            Text("Sending to your PC…")
+                            Text("Sending to Remnant…")
                                 .font(.subheadline)
                                 .foregroundStyle(Color.textSecondary)
                         }
@@ -91,8 +91,8 @@ struct AddReelSheet: View {
             dismiss()
         } catch {
             state = .failed(store.offlineSince != nil
-                            ? "Adding needs your PC, which is out of reach right now."
-                            : "Couldn't reach your PC: \(error.localizedDescription)")
+                            ? "Adding needs the recipe server, which is out of reach right now."
+                            : "Couldn't reach the recipe server: \(error.localizedDescription)")
         }
     }
 }

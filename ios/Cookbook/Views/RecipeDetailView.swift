@@ -396,8 +396,8 @@ struct RecipeDetailView: View {
                     Task {
                         do { try await store.checkAgain(recipe) } catch {
                             checkError = store.offlineSince != nil
-                                ? "Checking again needs your PC, which is out of reach right now."
-                                : "Couldn't reach your PC: \(error.localizedDescription)"
+                                ? "Checking again needs the recipe server, which is out of reach right now."
+                                : "Couldn't reach the recipe server: \(error.localizedDescription)"
                         }
                         checkRequested = false
                     }

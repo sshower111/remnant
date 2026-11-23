@@ -252,8 +252,8 @@ struct CookbookView: View {
     private var content: some View {
         let shown = shown
         if let error = store.error, store.recipes == nil {
-            ChefStateView(animation: .error, title: "Can't reach your PC",
-                          message: "Remnant gets recipes from the recipe server on your PC. Check it's on and on the same Wi-Fi. (\(error))") {
+            ChefStateView(animation: .error, title: "Can't reach the recipe server",
+                          message: "Remnant gets your recipes from its server. Check your connection, or the address in Settings. (\(error))") {
                 HStack(spacing: Spacing.xs) {
                     Button("Try again", systemImage: "arrow.clockwise") { Task { await store.load() } }
                         .buttonStyle(.primaryPill)
@@ -307,7 +307,7 @@ struct CookbookView: View {
     /// The library has nothing in it yet: how to add the first reels.
     private var emptyLibrary: some View {
         ChefStateView(animation: .empty, title: "Add your first reels",
-                      message: "In Instagram, TikTok or YouTube, tap Share, then Remnant. Your PC reads the reel and the recipe lands here in a few minutes.") {
+                      message: "In Instagram, TikTok or YouTube, tap Share, then Remnant. Remnant reads the reel and the recipe lands here in a few minutes.") {
             Button("Paste a link", systemImage: "plus") { showAddReel = true }
                 .buttonStyle(.primaryPill)
         }
@@ -357,10 +357,10 @@ struct CookbookView: View {
         let checkingAgain = job.refresh == true
         let (title, detail): (String, String) = switch (job.status, job.result, job.recipeStatus) {
         case ("queued", _, _): (checkingAgain ? "Waiting to check \(source) again" : "Waiting to add a reel from \(source)",
-                                "Your PC reads reels one at a time.")
+                                "Remnant reads reels one at a time.")
         case ("running", _, _): (checkingAgain ? "Checking \(source) again…" : "Adding a reel from \(source)…",
-                                 "Your PC is reading the video. About two minutes.")
-        case ("failed", _, _): ("Couldn't add the reel from \(source)", job.message ?? "Your PC couldn't read it.")
+                                 "Reading the video. About two minutes.")
+        case ("failed", _, _): ("Couldn't add the reel from \(source)", job.message ?? "Remnant couldn't read it.")
         case (_, _, "ready") where job.result != "skipped" || checkingAgain:
             ("Added \(job.title ?? "a new recipe")", "Tap to open it.")
         case (_, "skipped", _): ("Already in your library: \(job.title ?? source)", "Tap to open it.")
@@ -521,7 +521,7 @@ struct CookbookView: View {
                 removed = recipe
                 removeError = nil
             } else {
-                removeError = "Removing needs your PC, which is out of reach right now."
+                removeError = "Removing needs the recipe server, which is out of reach right now."
             }
         }
     }

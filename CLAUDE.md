@@ -6,8 +6,10 @@ based on available pantry items. Everything runs locally: no cloud APIs.
 
 The app is called **Remnant** ("cook with what's left"; renamed from Cookbook on 2026-11-05):
 display name, share-sheet entry, feed title, app icon (`ios/Art/app-icon/*.svg` -> the
-`AppIcon` PNGs: cream bowl with a sprig on terracotta, user's pick; dark and tinted variants;
-no tossing food or cook-with-a-wok imagery in the icon, the user's rule) and
+`AppIcon` PNGs: a saved bookmark with a bite taken out of it, ember crumbs, on charcoal; the
+user's pick on 2026-11-23, replacing the cream bowl with a sprig; dark and tinted variants; masters,
+lockups, small-size cut and rules in `design/logo/final/` (`make.py` regenerates them); in the app,
+`Design/RemnantMark.swift`; no tossing food or cook-with-a-wok imagery in the icon, the user's rule) and
 the `remnant://recipe/<id>` URL scheme. The Xcode project, targets, folders, Swift type names
 and bundle ids stay `Cookbook` on purpose: a new bundle id would install a second app and lose
 the phone's offline copy and settings. Built (Release) and installed on the iPhone 2026-11-05.
@@ -213,6 +215,9 @@ uvicorn api.app:app --host 0.0.0.0 --port 8000   # API for the iPhone app (on th
 - **Native iOS app** (`ios/`; built and run on the iPhone, never a Simulator: see Environment;
   the exceptions are the README's demo media and the 2026-11-23 UI redesign (`design/`:
   REVIEW, DIRECTION, before/after shots), both in the Simulator with the user's OK).
+  - User-facing copy never names the PC (the user may move the backend to the cloud,
+    2026-11-23): say "Remnant" ("Remnant is reading the video") or "the recipe server" for
+    connection errors and Settings. Same for the launch video and its share copy.
   - Design system (2026-11-23): colors in `Shared/Remnant.xcassets` (light/dark; ember accent,
     dark is the hero), spacing/radii/fonts in `Cookbook/Design/Theme.swift`, pills, chips and
     columns in `Design/Components.swift`. No emoji in the UI.

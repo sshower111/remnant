@@ -57,7 +57,7 @@ final class ShareModel {
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             guard status == 202, var job = try? JSONDecoder().decode(Job.self, from: data) else {
                 let detail = (try? JSONDecoder().decode([String: String].self, from: data))?["detail"]
-                phase = .failed(detail ?? "The PC answered HTTP \(status).")
+                phase = .failed(detail ?? "The recipe server answered HTTP \(status).")
                 return
             }
             // A post already in Remnant finishes almost at once: say so instead of "adding".
@@ -71,14 +71,14 @@ final class ShareModel {
             if job.status == "done", job.result == "skipped" {
                 phase = .alreadyThere(job.title)
             } else if job.status == "failed" {
-                phase = .failed(job.message ?? "The PC couldn't add it.")
+                phase = .failed(job.message ?? "Remnant couldn't add it.")
             } else {
                 phase = .adding
                 try? await Task.sleep(for: .seconds(2))
                 close()
             }
         } catch {
-            phase = .failed("Couldn't reach the PC at \(serverURL.host() ?? "?"). Is it on, with the server running, and is the phone on home Wi-Fi?")
+            phase = .failed("Couldn't reach the recipe server at \(serverURL.host() ?? "?"). Check your connection and try again.")
         }
     }
 
@@ -165,8 +165,8 @@ struct ShareView: View {
 
     private var detail: String {
         switch model.phase {
-        case .sending: "Sending the link to your PC."
-        case .adding: "Your PC is reading the video. The recipe shows up in Remnant in a few minutes."
+        case .sending: "Sending the link to Remnant."
+        case .adding: "Remnant is reading the video. The recipe shows up in a few minutes."
         case .alreadyThere(let title): title.map { "“\($0)” is in your library already." } ?? "This reel is in your library already."
         case .failed(let message): message
         }

@@ -44,7 +44,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Recipe server")
                 } footer: {
-                    Text("Your PC's address on home Wi-Fi. Start the server there with `uvicorn api.app:app --host 0.0.0.0 --port 8000`.")
+                    Text("Where Remnant reads and saves your recipes. Leave it on the default unless your server has moved.")
                 }
                 .listRowBackground(Color.surface)
 
