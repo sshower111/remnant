@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<title>Remnant: A, what's left</title>
+<!-- three leftovers of different sizes resting on the rim -->
+<circle cx="96" cy="104" r="24" fill="#000"/>
+<circle cx="146" cy="96" r="32" fill="#000"/>
+<circle cx="188" cy="112" r="16" fill="#000"/>
+<!-- bowl: rim and body as one shape, with a clear gap above the leftovers' bottoms -->
+<path fill="#000" d="M40 130 a8 8 0 0 1 8 -8 H208 a8 8 0 0 1 8 8 v4 a8 8 0 0 1 -8 8 h-2 A78 78 0 0 1 50 142 h-2 a8 8 0 0 1 -8 -8 Z"/>
+<rect x="100" y="210" width="56" height="12" rx="6" fill="#000"/>
+</svg>

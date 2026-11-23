@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><title>Remnant c-ribbon tomato</title><defs><radialGradient id="g" cx="0.5" cy="0.25" r="0.85"><stop offset="0" stop-color="#F0653F"/><stop offset="1" stop-color="#C9381F"/></radialGradient></defs>
+<rect width="256" height="256" rx="56" fill="url(#g)"/>
+<path fill-rule="evenodd" d="M98 40 H142 A54 54 0 0 1 142 148 H98 V112 H142 A18 18 0 0 0 142 76 H98 Z" fill="#120E0B"/>
+<path d="M98 40 H142 A54 54 0 0 1 194 88 H158 A18 18 0 0 0 142 76 H98 Z" fill="#2B2420"/>
+<path d="M62 40 H102 V222 L82 204 L62 222 Z" fill="#2B2420"/>
+<path d="M120 142 H150 L184 186 L164 200 Z" fill="#FFC23D"/>
+<ellipse cx="188" cy="206" rx="27" ry="19" transform="rotate(38 188 206)" fill="#FFC23D"/>
+<ellipse cx="192" cy="208" rx="13" ry="8" transform="rotate(38 192 208)" fill="#C9381F" fill-opacity="0.18"/></svg>

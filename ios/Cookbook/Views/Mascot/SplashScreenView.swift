@@ -20,18 +20,18 @@ struct SplashScreenView: View {
     }
 }
 
-/// "Remnant" in New York bold with an ember sprig, the app icon's mark.
+/// The logo's horizontal lockup: the bitten bookmark, then "Remnant" in New York bold
+/// (design/logo/final/remnant-horizontal-*.svg). The mark scales with the text.
 struct Wordmark: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var markHeight = 34.0
+
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
+        HStack(alignment: .center, spacing: 10) {
+            RemnantMark()
+                .frame(height: markHeight)
             Text("Remnant")
                 .font(.display)
                 .foregroundStyle(Color.textPrimary)
-            Image(systemName: "leaf.fill")
-                .font(.title3)
-                .foregroundStyle(Color.ember)
-                .rotationEffect(.degrees(-20))
-                .accessibilityHidden(true)
         }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
