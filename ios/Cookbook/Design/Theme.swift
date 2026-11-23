@@ -1,7 +1,42 @@
 import SwiftUI
 
-/// The app's colors and fonts: cream background, sand cards, terracotta accent, serif titles.
+// Remnant's design tokens (design/DIRECTION.md).
+//
+// Colors live in `Shared/Remnant.xcassets` with light and dark variants; Xcode generates
+// `Color.canvas`, `.surface`, `.surfaceRaised`, `.textPrimary`, `.textSecondary`, `.hairline`,
+// `.ember`, `.onEmber` and `.emberSoft` from it (shared with the share extension).
+
+/// The 4-pt spacing scale. Screen margins are `m`.
+enum Spacing {
+    static let xxs: CGFloat = 4
+    static let xs: CGFloat = 8
+    static let s: CGFloat = 12
+    static let m: CGFloat = 16
+    static let l: CGFloat = 24
+    static let xl: CGFloat = 32
+}
+
+/// Corner radii: small (thumbnails, ingredient tiles), medium (photos, the current cook step).
+/// Pills and chips are capsules.
+enum Radius {
+    static let small: CGFloat = 10
+    static let medium: CGFloat = 16
+}
+
+/// The smallest tappable size (Apple HIG).
+let minTouch: CGFloat = 44
+
+extension Font {
+    /// "Remnant" and recipe titles: New York bold, scales with Dynamic Type.
+    static let display = Font.system(.largeTitle, design: .serif, weight: .bold)
+    /// Section titles ("Ingredients", "Steps").
+    static let sectionTitle = Font.system(.title2, design: .serif, weight: .semibold)
+    /// A title in an empty state or a sheet header.
+    static let stateTitle = Font.system(.title3, design: .serif, weight: .semibold)
+}
+
 extension Color {
+    /// Hex literals, for the few fixed colors (the scrim over photos).
     init(hex: UInt32) {
         self.init(
             red: Double((hex >> 16) & 0xFF) / 255,
@@ -9,22 +44,13 @@ extension Color {
             blue: Double(hex & 0xFF) / 255
         )
     }
-
-    static let cream = Color(hex: 0xFAF8F5)          // background
-    static let sand = Color(hex: 0xE6E2DD)           // cards, borders
-    static let sandSoft = Color(hex: 0xF1EDE8)       // tiles
-    static let terracotta = Color(hex: 0xC86D51)     // accent, active
-    static let terracottaSoft = Color(hex: 0xF6E4DD) // active fills
-    static let ink = Color(hex: 0x2B2622)            // text
-    static let muted = Color(hex: 0x8A817A)
-    static let heart = Color(hex: 0xB0272B)           // filled favorite heart (deeper than terracotta)
-    static let heartOutline = Color(hex: 0x9A9089)    // empty heart: a touch lighter than muted
-    static let softWhite = Color(hex: 0xF3EFEA)       // icons over photos: warm, not pure white
 }
 
-extension Font {
-    /// Garamond-style titles; the system serif until EB Garamond is bundled.
-    static func serifTitle(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        .system(size: size, weight: weight, design: .serif)
+extension View {
+    /// Rows of a plain `List` that look like part of the page: no separator, no row background.
+    func pageRow(top: CGFloat = 0, bottom: CGFloat = 0, horizontal: CGFloat = Spacing.m) -> some View {
+        listRowInsets(EdgeInsets(top: top, leading: horizontal, bottom: bottom, trailing: horizontal))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
     }
 }
