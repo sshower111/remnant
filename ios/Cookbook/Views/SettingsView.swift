@@ -75,7 +75,7 @@ struct SettingsView: View {
     private var testResult: some View {
         switch test {
         case .idle: EmptyView()
-        case .testing: ProgressView()
+        case .testing: AnimatedChefView(.loading, size: 32)
         case .success(let count):
             Label("\(count) recipes", systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)

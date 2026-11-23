@@ -31,6 +31,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "53CC65803099BFC10099950E"
                BuildableName = "Cookbook.app"
+               BlueprintName = "Cookbook"
                ReferencedContainer = "container:Cookbook.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -62,6 +63,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "53CC65803099BFC10099950E"
             BuildableName = "Cookbook.app"
+            BlueprintName = "Cookbook"
             ReferencedContainer = "container:Cookbook.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -97,6 +99,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "53CC65803099BFC10099950E"
             BuildableName = "Cookbook.app"
+            BlueprintName = "Cookbook"
             ReferencedContainer = "container:Cookbook.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

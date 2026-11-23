@@ -265,7 +265,7 @@ struct RecipeDetailView: View {
                     }
                 } label: {
                     HStack(spacing: 8) {
-                        if checking { ProgressView().tint(.white) } else { Image(systemName: "arrow.clockwise") }
+                        if checking { AnimatedChefView(.loading, size: 30) } else { Image(systemName: "arrow.clockwise") }
                         Text(checking ? "Checking on your PC…" : "Check again")
                     }
                     .font(.subheadline.weight(.medium))

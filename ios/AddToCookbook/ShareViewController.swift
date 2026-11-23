@@ -121,7 +121,7 @@ struct ShareView: View {
             icon
                 .font(.system(size: 34, weight: .medium))
                 .foregroundStyle(terracotta)
-                .frame(height: 44)
+                .frame(height: model.phase == .sending ? 88 : 44)
             Text(title)
                 .font(.system(size: 26, design: .serif))
                 .foregroundStyle(ink)
@@ -149,7 +149,7 @@ struct ShareView: View {
     @ViewBuilder
     private var icon: some View {
         switch model.phase {
-        case .sending: ProgressView().tint(terracotta).scaleEffect(1.4)
+        case .sending: AnimatedChefView(.loading, size: 88)  // the pixel chef (Shared/)
         case .adding, .alreadyThere: Image(systemName: "checkmark.circle")
         case .failed: Image(systemName: "exclamationmark.triangle")
         }

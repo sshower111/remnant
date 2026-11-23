@@ -17,6 +17,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "53CC65803099BFC10099950E"
                BuildableName = "Cookbook.app"
+               BlueprintName = "Cookbook"
                ReferencedContainer = "container:Cookbook.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -50,7 +51,7 @@
       </Testables>
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Debug"
+      buildConfiguration = "Release"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
@@ -66,6 +67,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "53CC65803099BFC10099950E"
             BuildableName = "Cookbook.app"
+            BlueprintName = "Cookbook"
             ReferencedContainer = "container:Cookbook.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -82,6 +84,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "53CC65803099BFC10099950E"
             BuildableName = "Cookbook.app"
+            BlueprintName = "Cookbook"
             ReferencedContainer = "container:Cookbook.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

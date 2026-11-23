@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Plays one of the chef's frame sequences (`Image("chef_<animationPrefix>_<currentFrame>")`)
-/// at its own speed. The frame clock is a task tied to the view, so it stops as soon as the
+/// at its own speed (app and share extension; the Live Activity uses `ChefStill`). The frame clock is a task tied to the view, so it stops as soon as the
 /// view leaves the screen. With Reduce Motion on, the first frame stays still.
 ///
 /// Missing frames fall back to the toss (see `ChefAnimation.available`), so every state shows
@@ -58,5 +58,5 @@ struct AnimatedChefView: View {
         AnimatedChefView(.success, size: 68)
     }
     .padding()
-    .background(Color.cream)
+    .background(Color(red: 0xFA / 255, green: 0xF8 / 255, blue: 0xF5 / 255))
 }
