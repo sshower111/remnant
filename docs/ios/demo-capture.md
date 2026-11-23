@@ -1,5 +1,12 @@
 # Remnant demo capture (README media)
 
+> **2026-11-23:** the README now shows the UI redesign and the new logo: `launch.gif` (cut
+> from the launch video, `docs/media/remnant-launch*.mp4`, made with the brag skill), and
+> `library.jpg`, `recipe-steps.jpg`, `cook-mode.jpg` and `shopping-list.jpg` from
+> `design/after/`. The shots below (`home`, `feed`, `pantry`, `recipe`, `cooking`, `demo.gif`)
+> show the old UI and icon and are no longer linked; `island.jpg` and `lockscreen.jpg` still
+> are. Redo `home.jpg` on the phone to show the new icon.
+
 Run on the Mac, in the iOS Simulator: the one place the project uses a Simulator, with the
 user's OK (2026-11-05). The PC keeps serving the real database (`uvicorn` on
 `http://192.168.2.23:8000`); the Simulator's app talks to it like the phone does. Shut the
