@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// The chef above a short title and message: empty lists, the end of a recipe, errors.
+/// The empty, loading, error and finished states: the pixel chef above a short title, a line of
+/// help and an optional action.
 struct ChefStateView<Actions: View>: View {
     let animation: ChefAnimation
     let title: String
@@ -9,22 +10,24 @@ struct ChefStateView<Actions: View>: View {
     @ViewBuilder var actions: Actions
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Spacing.xs) {
             AnimatedChefView(animation, size: size)
+                .accessibilityHidden(true)
             Text(title)
-                .font(.serifTitle(24))
-                .foregroundStyle(Color.ink)
+                .font(.stateTitle)
+                .foregroundStyle(Color.textPrimary)
                 .multilineTextAlignment(.center)
-                .padding(.top, 4)
+                .padding(.top, Spacing.xxs)
             if let message {
                 Text(message)
                     .font(.subheadline)
-                    .foregroundStyle(Color.muted)
+                    .foregroundStyle(Color.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            actions.padding(.top, 8)
+            actions.padding(.top, Spacing.s)
         }
+        .frame(maxWidth: 340)
         .frame(maxWidth: .infinity)
     }
 }
@@ -35,17 +38,9 @@ extension ChefStateView where Actions == EmptyView {
     }
 }
 
-/// ❤️ with no favorites yet.
-struct EmptyFavoritesView: View {
-    var body: some View {
-        ChefStateView(animation: .empty, title: "No favorites yet",
-                      message: "Tap the heart on a recipe to keep it here.")
-    }
-}
-
 /// A recipe the PC couldn't read or that couldn't be loaded.
 struct ParseErrorView<Actions: View>: View {
-    var title = "Couldn't read this recipe"
+    var title = "Couldn't open this recipe"
     let message: String
     @ViewBuilder var actions: Actions
 
@@ -54,9 +49,9 @@ struct ParseErrorView<Actions: View>: View {
     }
 }
 
-/// The chef cooking while a recipe loads or a shared video is read on the PC.
+/// The chef cooking while a recipe loads.
 struct ChefLoadingView: View {
-    var title = "Loading the recipe…"
+    var title = "Getting the recipe…"
     var message: String?
 
     var body: some View {
@@ -64,15 +59,15 @@ struct ChefLoadingView: View {
     }
 }
 
-/// Shown at the top of the feed while a pull-to-refresh runs (in place of the system spinner,
+/// Shown at the top of the library while a pull-to-refresh runs (in place of the system spinner,
 /// which CookbookApp makes clear).
 struct RefreshingChefView: View {
     var body: some View {
-        HStack(spacing: 10) {
-            AnimatedChefView(.refresh, size: 48)
-            Text("Checking the PC for new recipes…")
+        HStack(spacing: Spacing.s) {
+            AnimatedChefView(.refresh, size: 44)
+            Text("Checking for new recipes…")
                 .font(.footnote.weight(.medium))
-                .foregroundStyle(Color.muted)
+                .foregroundStyle(Color.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
@@ -84,11 +79,11 @@ struct RefreshingChefView: View {
         VStack(spacing: 40) {
             RefreshingChefView()
             ChefLoadingView()
-            EmptyFavoritesView()
+            ChefStateView(animation: .empty, title: "No favorites yet", message: "Tap the heart on a recipe to keep it here.")
             ChefStateView(animation: .success, title: "All done. Enjoy!")
             ParseErrorView(message: "The video had no ingredient list.") { Button("Try again") {} }
         }
         .padding()
     }
-    .background(Color.cream)
+    .background(Color.canvas)
 }

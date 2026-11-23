@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<title>Remnant: A, what's left</title>
+<!-- three different leftovers, apart, resting in the bowl -->
+<circle cx="86" cy="96" r="20" fill="#000"/>
+<ellipse cx="136" cy="84" rx="22" ry="30" fill="#000"/>
+<circle cx="182" cy="102" r="14" fill="#000"/>
+<path fill="#000" d="M40 132 a8 8 0 0 1 8 -8 H208 a8 8 0 0 1 8 8 v2 a8 8 0 0 1 -8 8 h-2 A78 78 0 0 1 50 142 h-2 a8 8 0 0 1 -8 -8 Z"/>
+<rect x="100" y="210" width="56" height="12" rx="6" fill="#000"/>
+</svg>

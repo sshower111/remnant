@@ -9,3 +9,19 @@ data/
 xcuserdata/
 DerivedData/
 .DS_Store
+
+# Third-party Claude skills (logo-design, brag), installed locally
+.claude/skills/
+
+# /brag launch video output (has copies of Apple system fonts and reel thumbnails)
+brag-output/
+
+# Xcode builds made from the command line (-derivedDataPath build/...)
+build/
+
+# Logo lockups: outlines of Apple's New York font, licensed for Apple platforms only, so kept
+# local. Regenerate with design/logo/final/make.py after outlining the name (see its README).
+design/logo/final/wordmark.path
+design/logo/final/remnant-horizontal-*
+design/logo/final/remnant-stacked-*
+design/logo/final/png/remnant-*

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><title>Remnant b-saved tomato</title><defs><radialGradient id="g" cx="0.5" cy="0.25" r="0.85"><stop offset="0" stop-color="#F0653F"/><stop offset="1" stop-color="#C9381F"/></radialGradient></defs>
+<rect width="256" height="256" rx="56" fill="url(#g)"/>
+<path d="M54 130 C58 66 198 66 202 130 Z" fill="#FFFBF2"/>
+<path d="M66 118 C92 92 120 112 146 84 M76 128 C108 104 142 122 180 94 M100 130 C130 114 160 126 192 112 M70 100 C86 84 104 90 118 78" stroke="#B89A74" stroke-opacity="0.5" stroke-width="4" fill="none" stroke-linecap="round"/>
+<path d="M104 96 C108 70 134 60 150 66 C144 88 124 100 104 96 Z" fill="#3E7D4F"/>
+<path d="M112 92 L144 68" stroke="#000" stroke-opacity="0.18" stroke-width="2.5" stroke-linecap="round"/>
+<ellipse cx="164" cy="92" rx="27" ry="20" fill="#FFFFFF"/><circle cx="167" cy="93" r="12" fill="#FFC23D"/>
+<ellipse cx="128" cy="222" rx="70" ry="9" fill="#000" fill-opacity="0.22"/>
+<path d="M48 132 H208 A80 80 0 0 1 48 132 Z" fill="#FFF4E0"/>
+<path d="M66 142 A64 64 0 0 0 92 186" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="7" fill="none" stroke-linecap="round"/>
+<path d="M208 136 A80 80 0 0 1 128 212 A88 88 0 0 0 184 136 Z" fill="#E3C9A2"/>
+<rect x="104" y="204" width="48" height="14" rx="7" fill="#E3C9A2"/>
+<rect x="42" y="124" width="172" height="14" rx="7" fill="#FFFFFF"/>
+<path d="M70 112 H96 V196 L83 184 L70 196 Z" fill="#2B2420"/>
+<rect x="70" y="124" width="26" height="14" fill="#120E0B"/></svg>

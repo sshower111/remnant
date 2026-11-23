@@ -79,12 +79,6 @@ struct APIClient {
         try await get("api/ingredients")
     }
 
-    func pantry(have: [String], limit: Int? = nil) async throws -> [PantryMatch] {
-        var query = have.map { URLQueryItem(name: "have", value: $0) }
-        if let limit { query.append(URLQueryItem(name: "limit", value: String(limit))) }
-        return try await get("api/pantry", query: query)
-    }
-
     /// Posts shared from the phone and being added on the PC, newest first.
     func ingestJobs() async throws -> [IngestJob] {
         try await get("api/ingest")

@@ -65,17 +65,17 @@ nonisolated struct PantryIngredient: Codable, Hashable {
     let recipeCount: Int
 }
 
-nonisolated struct PantryMatch: Codable, Identifiable {
+/// How a recipe fits the picked ingredients (worked out on the phone: IngredientSearch.rank).
+nonisolated struct PantryMatch: Identifiable {
     var id: Int { recipeId }
     let recipeId: Int
-    let title: String
-    let thumbnailUrl: String?
+    /// How many of the picks the recipe uses.
     let matched: Int
-    let selected: Int
-    let total: Int
-    let missingCount: Int
-    let have: [String]
+    /// Its other ingredients, staples left out.
     let missing: [String]
+    /// All its ingredients, staples left out (for "you have 3 of 5").
+    let total: Int
+    var missingCount: Int { missing.count }
 }
 
 /// A post shared from the phone, being added on the PC (POST/GET /api/ingest).

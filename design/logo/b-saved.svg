@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<title>Remnant: B, a saved bowl</title>
+<!-- a bookmark with a bowl cut out of it: the reels you saved, as meals -->
+<path fill="#000" fill-rule="evenodd" d="M64 50 a18 18 0 0 1 18 -18 H174 a18 18 0 0 1 18 18 V228 L128 186 L64 228 Z
+ M80 100 a6 6 0 0 1 6 -6 H170 a6 6 0 0 1 6 6 v2 a6 6 0 0 1 -6 6 A42 42 0 0 1 86 108 a6 6 0 0 1 -6 -6 Z
+ M110 154 a6 6 0 0 1 6 -6 H140 a6 6 0 0 1 6 6 a6 6 0 0 1 -6 6 H116 a6 6 0 0 1 -6 -6 Z"/>
+</svg>

@@ -8,7 +8,7 @@
 		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Remnant sends shared posts to the server on your PC.</string>
+	<string>Remnant sends shared posts to your recipe server.</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionAttributes</key>

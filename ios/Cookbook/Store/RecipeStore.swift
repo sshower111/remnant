@@ -62,13 +62,11 @@ final class RecipeStore {
         }
     }
 
-    /// Pull-to-refresh: `load`, with `isRefreshing` set meanwhile. `also` runs inside the same
-    /// window (the feed's pantry re-rank).
-    func refresh(also: () async -> Void = {}) async {
+    /// Pull-to-refresh: `load`, with `isRefreshing` set meanwhile.
+    func refresh() async {
         isRefreshing = true
         defer { isRefreshing = false }
         await load()
-        await also()
     }
 
     /// Follows shared posts while any is being added: checks every 8 s, and reloads the feed
@@ -107,6 +105,15 @@ final class RecipeStore {
     /// the recipe since). The job shows above the feed like a share.
     func checkAgain(_ recipe: Recipe) async throws {
         let job = try await APIClient.current().ingest(recipe.video.url, refresh: true)
+        ingestJobs.removeAll { $0.id == job.id }
+        ingestJobs.insert(job, at: 0)
+        checkJobsNow = true
+    }
+
+    /// A reel link pasted in the app (the same as sharing it to Remnant): the PC adds it in the
+    /// background and the job shows above the library.
+    func addLink(_ url: String) async throws {
+        let job = try await APIClient.current().ingest(url)
         ingestJobs.removeAll { $0.id == job.id }
         ingestJobs.insert(job, at: 0)
         checkJobsNow = true

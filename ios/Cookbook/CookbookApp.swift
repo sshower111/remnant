@@ -18,6 +18,11 @@ struct CookbookApp: App {
         URLCache.shared = URLCache(memoryCapacity: 50_000_000, diskCapacity: 200_000_000)
         // The feed's pull-to-refresh shows the chef (RefreshingChefView) instead of the spinner.
         UIRefreshControl.appearance().tintColor = .clear
+        // "Remnant" as a large title in New York bold, the app's wordmark (design/DIRECTION.md).
+        let largeTitle = UIFont.preferredFont(forTextStyle: .largeTitle)
+        if let serif = largeTitle.fontDescriptor.withDesign(.serif)?.withSymbolicTraits(.traitBold) {
+            UINavigationBar.appearance().largeTitleTextAttributes = [.font: UIFont(descriptor: serif, size: 0)]
+        }
     }
 
     var body: some Scene {

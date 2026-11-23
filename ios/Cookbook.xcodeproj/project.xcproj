@@ -11,8 +11,24 @@
     ],
   },
   "files": [
-    { "kind": "folder", "path": "Shared", "target-membership": [ "Cookbook", "CookingActivityExtension" ] },
     {
+      "kind": "folder",
+      "path": "Shared",
+      "target-membership": [
+        "AddToCookbook",
+        "Cookbook",
+        "CookingActivityExtension",
+      ],
+      "membership-exceptions": [
+        {
+          "target": "AddToCookbook",
+          "exclusions": [
+            "CookingActivityAttributes.swift",
+            "CookingProgress.swift",
+          ],
+        },
+      ],
+    }, {
       "kind": "folder",
       "path": "Cookbook",
       "target-membership": [

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<title>Remnant: C, R with a spoon leg</title>
+<path fill="#000" fill-rule="evenodd" d="M62 40 H138 A58 58 0 0 1 138 156 H100 V216 H62 Z M100 74 H136 A24 24 0 0 1 136 122 H100 Z"/>
+<!-- the leg is a spoon: handle from the bowl of the R, spoon bowl at the foot -->
+<path fill="#000" d="M118 150 L146 150 L170 182 L150 196 Z"/>
+<ellipse cx="176" cy="204" rx="28" ry="20" transform="rotate(40 176 204)" fill="#000"/>
+</svg>

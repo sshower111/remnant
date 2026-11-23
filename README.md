@@ -1,41 +1,40 @@
 <p align="center">
-  <img src="ios/Cookbook/Assets.xcassets/AppIcon.appiconset/AppIcon-light.png" width="96" alt="Remnant app icon: a bowl with a sprig">
+  <img src="ios/Cookbook/Assets.xcassets/AppIcon.appiconset/AppIcon-light.png" width="96" alt="Remnant app icon: a bookmark with a bite taken out of it">
 </p>
 
 <h1 align="center">Remnant</h1>
 
 <p align="center"><b>Cook with what's left.</b></p>
 
-Remnant is an iPhone app that turns the cooking reels you save into recipes you can cook from,
-and tells you which ones you can make with what's left in your kitchen. Share a reel from
-Instagram and a couple of minutes later it's in Remnant: ingredients, steps and timers, read
-from the video's caption, speech, on-screen text, linked blog or, for silent videos, the
-pictures themselves, by a local AI pipeline. Search by what's in your pantry, then cook step by
-step from the Dynamic Island while the video plays. Everything runs on your own machines: no
-cloud APIs.
+I kept saving cooking reels and never cooking them. Remnant is the iPhone app I built to fix
+that: share a reel from Instagram, TikTok or YouTube and a couple of minutes later it's a real
+recipe, with ingredients, amounts and steps read from the video's caption, speech, on-screen
+text, linked blog or, for silent videos, the pictures themselves. Then tap what's left in your
+kitchen and the library re-ranks by what you can make, and cook it one big step at a time, with
+the current step following you into the Dynamic Island.
 
 <p align="center">
-  <img src="docs/media/home.jpg" width="32%" alt="Remnant on the iPhone home screen">
-  <img src="docs/media/feed.jpg" width="32%" alt="Remnant feed: recipes saved from reels, with filters">
-  <img src="docs/media/pantry.jpg" width="32%" alt="Search by what you have: garlic, egg and green onion re-rank the feed">
+  <img src="docs/media/launch.gif" width="100%" alt="Remnant in motion: a saved reel becomes a recipe, and picking egg and butter re-ranks the library">
 </p>
-<p align="center"><sub>The app on the home screen · your saved reels as recipes · add what you have
-and the feed re-ranks by what each recipe uses and still needs</sub></p>
+<p align="center"><sub>Share a reel, get the recipe, pick what you have. Launch video (22 s, with sound):
+<a href="docs/media/remnant-launch.mp4">landscape</a> · <a href="docs/media/remnant-launch-vertical.mp4">vertical</a>.
+Music: Sascha Ende, <a href="https://ende.app">ende.app</a> (CC BY 4.0).</sub></p>
 
 <p align="center">
-  <img src="docs/media/recipe.jpg" width="32%" alt="Recipe screen with ingredient icons and amounts">
-  <img src="docs/media/cooking.jpg" width="32%" alt="Cooking mode: swipeable step card with a running timer">
+  <img src="docs/media/library.jpg" width="24%" alt="The library: saved reels as recipes, with What can I make? chips and filters">
+  <img src="docs/media/recipe-steps.jpg" width="24%" alt="A recipe's ingredients with icons and amounts, and its steps">
+  <img src="docs/media/cook-mode.jpg" width="24%" alt="Cook mode: every step large, the current one lifted with its ingredients">
+  <img src="docs/media/shopping-list.jpg" width="24%" alt="The ingredient sheet, with this step's ingredients marked">
+</p>
+<p align="center"><sub>Your saved reels as recipes · ingredients and steps · cook mode, one step at a
+time · the ingredient list, with what this step needs marked</sub></p>
+
+<p align="center">
   <img src="docs/media/island.jpg" width="32%" alt="Expanded Dynamic Island: step, timer and step controls">
-</p>
-<p align="center"><sub>Ingredient tiles with icons and amounts · cooking mode with the step's timer
-running · the same step in the Dynamic Island</sub></p>
-
-<p align="center">
   <img src="docs/media/lockscreen.jpg" width="32%" alt="Lock Screen Live Activity">
-  <img src="docs/media/demo.gif" width="32%" alt="Leave the recipe and the step follows into the Dynamic Island">
 </p>
-<p align="center"><sub>The step on the Lock Screen · leave a recipe mid-cook and the step follows
-into the Dynamic Island; › moves to the next one. Captured in the iOS Simulator.</sub></p>
+<p align="center"><sub>The current step in the Dynamic Island and on the Lock Screen, with its timer
+and step controls</sub></p>
 
 **Tech:** SwiftUI · ActivityKit / App Intents · Python · yt-dlp · faster-whisper · EasyOCR ·
 Ollama (local LLM, JSON-schema output, vision) · ffmpeg · SQLite · FastAPI · pytest (260 tests)
@@ -43,7 +42,7 @@ Ollama (local LLM, JSON-schema output, vision) · ffmpeg · SQLite · FastAPI ·
 ## What it does
 
 - **Share a reel, get a recipe.** "Remnant" in the iPhone share sheet sends the link to the
-  PC, which downloads the post, transcribes it, has a local LLM extract the recipe, and saves
+  recipe server, which downloads the post, transcribes it, has a local LLM extract the recipe, and saves
   it; the app shows "Adding..." and then the new recipe. Posts without a recipe yet ("link in
   bio", "coming soon") can be saved for later and checked again.
 - **Multimodal extraction.** Platform captions or Whisper speech-to-text, the post's caption,
@@ -55,7 +54,7 @@ Ollama (local LLM, JSON-schema output, vision) · ffmpeg · SQLite · FastAPI ·
   between steps. Step text there is a model-written short version of each step.
 - **What can I make?** Ingredient names are normalized ("2 large eggs" and "eggs" are both
   `egg`), so picking what you have ranks recipes by how much of it they use.
-- **Works offline.** The phone keeps a copy of every recipe for when the PC is off.
+- **Works offline.** The phone keeps a copy of every recipe for when the server is out of reach.
 
 ## How the AI pipeline works
 
